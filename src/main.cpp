@@ -1,5 +1,9 @@
+#include "monitor.h"
+
 extern "C" {
     int main(void* mboot) {
-        return 0x0070DD05;
+        Monitor m;
+        m.clear();
+        m << "Hello, ToddOS!\n";
     }
 }
