@@ -1,7 +1,5 @@
 project('Todd', 'cpp')
 
-bootloader = declare_dependency(sources: 'src/boot.s', compile_args: ['-fPIE', '-m32'])
-
 sources = [
 	'src/boot.s',
 	'src/main.cpp',
