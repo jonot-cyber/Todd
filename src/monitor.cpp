@@ -2,11 +2,15 @@
 
 u16* videoMemory = (u16*)0xB8000;
 
+/* Initializes the monitor */
 Monitor::Monitor() {
     cursorX = 0;
     cursorY = 0;
+    resetColor();
+    clear();
 }
 
+/* Move the cursor to the correct position */
 void Monitor::moveCursor() {
     u16 cursorLocation = cursorY * 80 + cursorX;
     
@@ -22,6 +26,7 @@ void Monitor::moveCursor() {
     dataPort << (u8)(cursorLocation);
 }
 
+/* Scroll the screen if there is no space left over */
 void Monitor::scroll() {
     u16 blank = colorCharacter(' ');
 
@@ -38,10 +43,8 @@ void Monitor::scroll() {
     }
 }
 
-void Monitor::operator<<(u16 c) {
-    u16 wc = c;
-
-    u16* loc;
+/* Output a character to the screen */
+void Monitor::operator<<(u8 c) {
     switch (c) {
         case '\b':
             if (cursorX != 0) {
@@ -59,8 +62,8 @@ void Monitor::operator<<(u16 c) {
             cursorY++;
             break;
         default:
-            loc = videoMemory + (cursorY * 80 + cursorX);
-            *loc = wc;
+            u16* location = videoMemory + (cursorY * 80 + cursorX);
+            *location = colorCharacter(c);
             cursorX++;
             break;
     }
@@ -68,16 +71,11 @@ void Monitor::operator<<(u16 c) {
     moveCursor();
 }
 
-void Monitor::operator<<(u8 c) {
-    *this << colorCharacter(c);
-}
-
+/* Clear the screen */
 void Monitor::clear() {
    u16 blank = colorCharacter(' ');
 
-   int i;
-   for (i = 0; i < 80*25; i++)
-   {
+   for (int i = 0; i < 80*25; i++) {
        videoMemory[i] = blank;
    }
 
@@ -87,14 +85,29 @@ void Monitor::clear() {
    moveCursor();
 }
 
+/* Output a string to the screen */
 void Monitor::operator<<(u8* c) {
     for (int i = 0; c[i]; i++) {
         *this << c[i];
     }
 }
 
-void Monitor::operator<<(i8* c) {
+/* Also outputs a string to the screen. Used because chars are signed in C++ */
+void Monitor::operator<<(const i8* c) {
     for (int i = 0; c[i]; i++) {
-        *this << reinterpret_cast<i8>(c[i]);
+        *this << *(u8*)&c[i];
     }
+}
+
+/* Reset the colors */
+void Monitor::resetColor() {
+    foregroundColor = VGAColor::White;
+    backgroundColor = VGAColor::Black;
+}
+
+/* Color a character */
+u16 Monitor::colorCharacter(u8 c) {
+    u8 attr = ((u8)backgroundColor << 4) | ((u8)foregroundColor & 0x0F);
+    u16 wc = c | (attr << 8);
+    return wc;
 }

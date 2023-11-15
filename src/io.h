@@ -3,12 +3,12 @@
 
 class IO {
 public:
-    IO(u16 port);
+    explicit IO(u16 port);
 
-    void operator<<(u8 value);
-    void operator>>(u8& value);
-    void operator<<(u16 value);
-    void operator>>(u16& value);
+    void operator<<(u8 value) const;
+    void operator>>(u8& value) const;
+    void operator<<(u16 value) const;
+    void operator>>(u16& value) const;
 private:
     u16 port;
 };
