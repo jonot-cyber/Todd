@@ -3,7 +3,7 @@
 
 class IO {
 public:
-    explicit IO(u16 port);
+    IO(u16 port);
 
     void operator<<(u8 value) const;
     void operator>>(u8& value) const;

@@ -13,6 +13,7 @@ public:
     void operator<<(u8* c);
     void operator<<(const i8* c);
     void resetColor();
+    void writeHex(u8 c);
 
     VGAColor backgroundColor;
     VGAColor foregroundColor;

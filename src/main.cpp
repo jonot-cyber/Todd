@@ -1,4 +1,5 @@
 #include "monitor.h"
+#include "ps2.h"
 
 void outputToddOS(Monitor& m) {
     m << "Welcome To ";
@@ -25,6 +26,18 @@ void outputHeader(Monitor& monitor) {
     monitor << '\n';
 }
 
+void outputPassFail(Monitor& m, bool value) {
+    m.resetColor();
+    if (value) {
+        m.foregroundColor = VGAColor::LightGreen;
+        m << "PASS";
+    } else {
+        m.foregroundColor = VGAColor::LightRed;
+        m << "FAIL";
+    }
+    m.resetColor();
+}
+
 extern "C" {
     /* Initial function */
     int main(void* mboot) {
@@ -37,14 +50,18 @@ extern "C" {
         m.resetColor();
         m << '\n';
         outputHeader(m);
-        m << "This is an alpha version of the ToddOS operating system. It currently is able to boot with a multiboot compatible boot loader, and can output text to a VGA screen. Nothing else.";
-        for (int i = 0; i < 20; i++) {
-            m << '\n';
-        }
-        for (int i = 0; i < 77; i++) {
-            m << ' ';
-        }
-        m.foregroundColor = VGAColor::LightMagenta;
-        m << "OwO";
+
+        PS2 ps2;
+        m << "        PS2 Test: ";
+        outputPassFail(m, ps2.isControllerWorking);
+        m << "\nPS2 Dual Channel: ";
+        outputPassFail(m, ps2.isDualChannel);
+        m << "\n      PS2 Port 1: ";
+        outputPassFail(m, ps2.isPort1Working);
+        m << "\n       PS2 Reset: ";
+        outputPassFail(m, ps2.isResetWorking);
+        PS2DeviceType deviceId = ps2.identifyDevice();
+        m << "\n       Device ID: ";
+        m.writeHex((u8)deviceId);
     }
 }

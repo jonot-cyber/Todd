@@ -111,3 +111,11 @@ u16 Monitor::colorCharacter(u8 c) {
     u16 wc = c | (attr << 8);
     return wc;
 }
+
+void Monitor::writeHex(u8 c) {
+    const char hexDigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+    u8 hi = c >> 4;
+    u8 low = c & 0xF;
+    *this << hexDigits[hi];
+    *this << hexDigits[low];
+}
