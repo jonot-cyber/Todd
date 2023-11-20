@@ -119,3 +119,13 @@ void Monitor::writeHex(u8 c) {
     *this << hexDigits[hi];
     *this << hexDigits[low];
 }
+
+void Monitor::setPos(u8 x, u8 y, u8 c) {
+    u8 oldX = cursorX;
+    u8 oldY = cursorY;
+    cursorX = x;
+    cursorY = y;
+    *this << c;
+    cursorX = oldX;
+    cursorY = oldY;
+}

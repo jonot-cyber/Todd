@@ -1,5 +1,6 @@
 #include "monitor.h"
 #include "ps2.h"
+#include "keyboard.h"
 
 void outputToddOS(Monitor& m) {
     m << "Welcome To ";
@@ -42,26 +43,10 @@ extern "C" {
     /* Initial function */
     int main(void* mboot) {
         Monitor m;
-        outputHeader(m);
-        outputToddOS(m);
-        m << "\n  Version ";
-        m.foregroundColor = VGAColor::LightBrown;
-        m << "0.1";
-        m.resetColor();
-        m << '\n';
-        outputHeader(m);
-
-        PS2 ps2;
-        m << "        PS2 Test: ";
-        outputPassFail(m, ps2.isControllerWorking);
-        m << "\nPS2 Dual Channel: ";
-        outputPassFail(m, ps2.isDualChannel);
-        m << "\n      PS2 Port 1: ";
-        outputPassFail(m, ps2.isPort1Working);
-        m << "\n       PS2 Reset: ";
-        outputPassFail(m, ps2.isResetWorking);
-        PS2DeviceType deviceId = ps2.identifyDevice();
-        m << "\n       Device ID: ";
-        m.writeHex((u8)deviceId);
+        Keyboard k;
+        while (true) {
+            k.scan();
+            k.test(m);
+        }
     }
 }

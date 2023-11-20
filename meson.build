@@ -5,7 +5,8 @@ sources = [
 	'src/main.cpp',
 	'src/io.cpp',
 	'src/monitor.cpp',
-	'src/ps2.cpp'
+	'src/ps2.cpp',
+	'src/keyboard.cpp',
 ]
 
 kernel = executable('Kernel', sources, link_args: ['-T../src/link.ld', '-m32', '-nostdlib'], cpp_args: ['-m32', '-nostdinc', '-fno-builtin'])
