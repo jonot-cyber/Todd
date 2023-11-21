@@ -3,26 +3,22 @@
 #include "io.h"
 #include "vga.h"
 
-class Monitor {
-public:
-    Monitor();
-
+namespace Monitor {
+    void init();
     void clear();
 
-    void operator<<(u8 c);
-    void operator<<(u8* c);
-    void operator<<(const i8* c);
+    void putChar(u8 c);
+    void putString(u8* c);
+    void putString(i8* c);
     void resetColor();
     void writeHex(u8 c);
     void setPos(u8 x, u8 y, u8 c);
-
-    VGAColor backgroundColor;
-    VGAColor foregroundColor;
-private:
     void moveCursor();
     void scroll();
     u16 colorCharacter(u8 c);
 
-    u8 cursorX;
-    u8 cursorY;
+    void setBackgroundColor(VGAColor c);
+    void setForegroundColor(VGAColor c);
+    VGAColor getBackgroundColor();
+    VGAColor getForegroundColor();
 };

@@ -1,14 +1,9 @@
 #pragma once
+
 #include "common.h"
 
-class IO {
-public:
-    IO(u16 port);
-
-    void operator<<(u8 value) const;
-    void operator>>(u8& value) const;
-    void operator<<(u16 value) const;
-    void operator>>(u16& value) const;
-private:
-    u16 port;
+namespace IO {
+    void out(u16 port, u8 value);
+    u8 in(u16 port);
+    u16 inWord(u16 port);
 };

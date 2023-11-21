@@ -1,6 +1,12 @@
 #include "ps2.h"
+#include "monitor.h"
 
-PS2::PS2() : cmdPort(IO(0x64)), dataPort(IO(0x60)) {
+static bool isDualChannel = false;
+static bool isControllerWorking = false;
+static bool isPort1Working = false;
+static bool isResetWorking = false;
+
+void PS2::init() {
     // TODO: Currently we assume that this exists, which isn't true for some niche devices
 
     // Disable all devices
@@ -8,18 +14,16 @@ PS2::PS2() : cmdPort(IO(0x64)), dataPort(IO(0x60)) {
     disablePort(false);
 
     // Flush output buffer
-    u8 nil;
-    cmdPort >> nil;
+    IO::in(0x64);
 
     // Set Controller Configuration Byte
-    cmdPort << (u8)PS2Command::ReadByte0;
-    u8 ret;
-    dataPort >> ret;
+    IO::out(cmdPort, static_cast<u8>(Command::ReadByte0));
+    u8 ret = IO::in(dataPort);
     isDualChannel = (ret & 0x10) == 0;
     // TODO: Get this working without translation
-    // ret = (ret & 0xBF) | 0; // Disable translation
-    cmdPort << (u8)PS2Command::WriteByte0;
-    dataPort << ret;
+    ret = (ret & 0xBF) | 0; // Disable translation
+    IO::out(cmdPort, static_cast<u8>(Command::WriteByte0));
+    IO::out(dataPort, ret);
 
     // Perform self test
     isControllerWorking = test();
@@ -28,10 +32,9 @@ PS2::PS2() : cmdPort(IO(0x64)), dataPort(IO(0x60)) {
     }
 
     // Perform interface test
-    cmdPort << (u8)PS2Command::TestPort1;
-    PS2TestPortResult status = PS2TestPortResult::Pass;
-    dataPort >> *(u8*)&status;
-    isPort1Working = status == PS2TestPortResult::Pass;
+    IO::out(cmdPort, static_cast<u8>(Command::TestPort1));
+    auto status = static_cast<TestPortResult>(IO::in(dataPort));
+    isPort1Working = status == TestPortResult::Pass;
     // TODO: Test second port if it exists
 
     // Enable devices
@@ -39,95 +42,89 @@ PS2::PS2() : cmdPort(IO(0x64)), dataPort(IO(0x60)) {
     enablePort(true);
 
     // Reset devices
-    dataPort << (u8)0xFF;
-    PS2ResetResponse resetResponse;
-    dataPort >> *(u8*)&resetResponse;
-    isResetWorking = resetResponse == PS2ResetResponse::Success;
+    IO::out(dataPort, 0xFF);
+    auto resetResponse = static_cast<ResetResponse>(IO::in(dataPort));
+    isResetWorking = resetResponse == ResetResponse::Success;
 }
 
 void PS2::enablePort(bool first) {
     if (first) {
-        cmdPort << (u8)PS2Command::EnablePort1;
+        IO::out(cmdPort, static_cast<u8>(Command::EnablePort1));
     } else {
-        cmdPort << (u8)PS2Command::EnablePort2;
+        IO::out(cmdPort, static_cast<u8>(Command::EnablePort2));
     }
 }
 
 void PS2::disablePort(bool first) {
     if (first) {
-        cmdPort << (u8)PS2Command::DisablePort1;
+        IO::out(cmdPort, static_cast<u8>(Command::DisablePort1));
     } else {
-        cmdPort << (u8)PS2Command::DisablePort2;
+        IO::out(cmdPort, static_cast<u8>(Command::DisablePort2));
     }
 }
 
 bool PS2::test() {
-    cmdPort << (u8)PS2Command::TestController;
-    PS2TestResult res = PS2TestResult::Fail;
-    dataPort >> *(u8*)&res;
-    return res == PS2TestResult::Pass;
+    IO::out(cmdPort, static_cast<u8>(Command::TestController));
+    auto res = static_cast<TestResult>(IO::in(dataPort));
+    return res == TestResult::Pass;
 }
 
-PS2DeviceType PS2::identifyDevice() {
-    u8 ret;
-    dataPort << (u8)0xF5; // Disable scanning command
-    dataPort >> ret;
+PS2::DeviceType PS2::identifyDevice() {
+    IO::out(dataPort, 0xF5); // Disable scanning
+    u8 ret = IO::in(dataPort);
     if (ret != 0XFA) {
-        dataPort << (u8)0xF4; // Enable scanning
-        return PS2DeviceType::None;
+        IO::out(dataPort, 0xF4); // Enable scanning
+        return DeviceType::None;
     }
-    dataPort << (u8)0xF2; // Identify command
-    dataPort >> ret;
+    IO::out(dataPort, 0xF2); // Identify command
+    ret = IO::in(dataPort);
     if (ret != 0xFA) {
-        dataPort << (u8)0xF4; // Enable scanning
-        return PS2DeviceType::None;
+        IO::out(dataPort, 0xF4);
+        return DeviceType::None;
     }
-    dataPort >> ret;
+    ret = IO::in(dataPort);
     switch (ret) {
         case 0x00:
-            dataPort << (u8)0xF4; // Enable scanning
-            return PS2DeviceType::ATKeyboard;
+            IO::out(dataPort, 0xF4);
+            return DeviceType::Mouse;
         case 0x03:
-            dataPort << (u8)0xF4; // Enable scanning
-            return PS2DeviceType::Mouse;
+            IO::out(dataPort, 0xF4);
+            return DeviceType::MouseWithScrollWheel;
         case 0x04:
-            dataPort << (u8)0xF4; // Enable scanning
-            return PS2DeviceType::Mouse5Button;
+            IO::out(dataPort, 0xF4);
+            return DeviceType::Mouse5Button;
         case 0xAB:
-            dataPort >> ret;
-            dataPort << (u8)0xF4; // Enable scanning
+            ret = IO::in(dataPort);
+            IO::out(dataPort, 0xF4);
             switch (ret) {
-                case 0x41:
+                case 0x83:
                 case 0xC1:
-                    return PS2DeviceType::MF2Keyboard;
-                case 0x54:
-                    return PS2DeviceType::ShortKeyboard;
+                    return DeviceType::MF2Keyboard;
+                case 0x84:
+                    return DeviceType::ShortKeyboard;
                 case 0x85:
-                    return PS2DeviceType::N97Keyboard;
+                    return DeviceType::N97Keyboard;
                 case 0x86:
-                    return PS2DeviceType::Keyboard;
+                    return DeviceType::Keyboard;
                 case 0x90:
-                    return PS2DeviceType::JapanGKeyboard;
+                    return DeviceType::JapanGKeyboard;
                 case 0x91:
-                    return PS2DeviceType::JapanPKeyboard;
+                    return DeviceType::JapanPKeyboard;
                 case 0x92:
-                    return PS2DeviceType::JapanAKeyboard;
+                    return DeviceType::JapanAKeyboard;
                 case 0xA1:
-                    return PS2DeviceType::SunKeyboard;
+                    return DeviceType::SunKeyboard;
                 default:
-                    return PS2DeviceType::None;
+                    return DeviceType::None;
             }
         default:
-            return PS2DeviceType::None;
+            return DeviceType::None;
     }
 }
 
-PS2 PS2::operator<<(u8 dat) {
-    dataPort << dat;
-    return *this;
+void PS2::out(u8 dat) {
+    IO::out(dataPort, dat);
 }
-
-PS2 PS2::operator>>(u8& dat) {
-    dataPort >> dat;
-    return *this;
+u8 PS2::in() {
+    return IO::in(dataPort);
 }

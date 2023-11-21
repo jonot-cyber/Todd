@@ -1,52 +1,54 @@
-#include "monitor.h"
-#include "ps2.h"
 #include "keyboard.h"
 
-void outputToddOS(Monitor& m) {
-    m << "Welcome To ";
-    m.backgroundColor = VGAColor::Blue;
-    m.foregroundColor = VGAColor::LightRed;
-    m << 'T';
-    m.foregroundColor = VGAColor::LightBrown;
-    m << 'o';
-    m.foregroundColor = VGAColor::LightGreen;
-    m << 'd';
-    m.foregroundColor = VGAColor::LightCyan;
-    m << 'd';
-    m.foregroundColor = VGAColor::LightBlue;
-    m << 'O';
-    m.foregroundColor = VGAColor::LightMagenta;
-    m << 'S';
-    m.resetColor();
+void outputToddOS() {
+    Monitor::putString("Welcome To ");
+    Monitor::setBackgroundColor(VGAColor::Blue);
+    Monitor::setForegroundColor(VGAColor::LightRed);
+    Monitor::putChar('T');
+    Monitor::setForegroundColor(VGAColor::LightBrown);
+    Monitor::putChar('o');
+    Monitor::setForegroundColor(VGAColor::LightGreen);
+    Monitor::putChar('d');
+    Monitor::setForegroundColor(VGAColor::LightCyan);
+    Monitor::putChar('d');
+    Monitor::setForegroundColor(VGAColor::LightBlue);
+    Monitor::putChar('O');
+    Monitor::setForegroundColor(VGAColor::LightMagenta);
+    Monitor::putChar('S');
+
+    Monitor::resetColor();
 }
 
-void outputHeader(Monitor& monitor) {
+void outputHeader() {
     for (int i = 0; i < 80; i++) {
-        monitor << '=';
+        Monitor::putChar('=');
     }
-    monitor << '\n';
+    Monitor::putChar('\n');
 }
 
-void outputPassFail(Monitor& m, bool value) {
-    m.resetColor();
+void outputPassFail(bool value) {
+    Monitor::resetColor();
     if (value) {
-        m.foregroundColor = VGAColor::LightGreen;
-        m << "PASS";
+        Monitor::setForegroundColor(VGAColor::LightGreen);
+        Monitor::putString("PASS");
     } else {
-        m.foregroundColor = VGAColor::LightRed;
-        m << "FAIL";
+        Monitor::setForegroundColor(VGAColor::LightRed);
+        Monitor::putString("FAIL");
     }
-    m.resetColor();
+    Monitor::resetColor();
 }
 
 extern "C" {
     /* Initial function */
     int main(void* mboot) {
-        Monitor m;
-        Keyboard k;
+        Monitor::init();
+        PS2::init();
+        Keyboard::init();
+        Keyboard::setScanCodeSet(2);
+        outputToddOS();
         while (true) {
-            k.scan();
-            k.test(m);
+            Keyboard::scan();
+            Keyboard::test();
         }
     }
 }

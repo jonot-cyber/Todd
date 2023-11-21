@@ -1,9 +1,15 @@
 #include "monitor.h"
 
+static VGAColor backgroundColor = VGAColor::Black;
+static VGAColor foregroundColor = VGAColor::White;
+
+static u8 cursorX;
+static u8 cursorY;
+
 u16* videoMemory = (u16*)0xB8000;
 
 /* Initializes the monitor */
-Monitor::Monitor() {
+void Monitor::init() {
     cursorX = 0;
     cursorY = 0;
     resetColor();
@@ -13,17 +19,17 @@ Monitor::Monitor() {
 /* Move the cursor to the correct position */
 void Monitor::moveCursor() {
     u16 cursorLocation = cursorY * 80 + cursorX;
-    
-    IO commandPort(0x3D4);
-    IO dataPort(0x3D5);
+
+    u16 cmdPort = 0x3D4;
+    u16 dataPort = 0x3D5;
 
     // Send lower bit
-    commandPort << (u8)14;
-    dataPort << (u8)(cursorLocation >> 8);
+    IO::out(cmdPort, 14);
+    IO::out(dataPort, cursorLocation >> 8);
 
     // Send upper bit
-    commandPort << (u8)15;
-    dataPort << (u8)(cursorLocation);
+    IO::out(cmdPort, 15);
+    IO::out(dataPort, cursorLocation);
 }
 
 /* Scroll the screen if there is no space left over */
@@ -44,7 +50,7 @@ void Monitor::scroll() {
 }
 
 /* Output a character to the screen */
-void Monitor::operator<<(u8 c) {
+void Monitor::putChar(u8 c) {
     switch (c) {
         case '\b':
             if (cursorX != 0) {
@@ -86,16 +92,16 @@ void Monitor::clear() {
 }
 
 /* Output a string to the screen */
-void Monitor::operator<<(u8* c) {
+void Monitor::putString(u8 *c) {
     for (int i = 0; c[i]; i++) {
-        *this << c[i];
+        Monitor::putChar(c[i]);
     }
 }
 
 /* Also outputs a string to the screen. Used because chars are signed in C++ */
-void Monitor::operator<<(const i8* c) {
+void Monitor::putString(i8 *c) {
     for (int i = 0; c[i]; i++) {
-        *this << *(u8*)&c[i];
+        Monitor::putChar(static_cast<u8>(c[i]));
     }
 }
 
@@ -108,16 +114,15 @@ void Monitor::resetColor() {
 /* Color a character */
 u16 Monitor::colorCharacter(u8 c) {
     u8 attr = ((u8)backgroundColor << 4) | ((u8)foregroundColor & 0x0F);
-    u16 wc = c | (attr << 8);
-    return wc;
+    return c | (attr << 8);
 }
 
 void Monitor::writeHex(u8 c) {
     const char hexDigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
     u8 hi = c >> 4;
     u8 low = c & 0xF;
-    *this << hexDigits[hi];
-    *this << hexDigits[low];
+    putChar(hexDigits[hi]);
+    putChar(hexDigits[low]);
 }
 
 void Monitor::setPos(u8 x, u8 y, u8 c) {
@@ -125,7 +130,23 @@ void Monitor::setPos(u8 x, u8 y, u8 c) {
     u8 oldY = cursorY;
     cursorX = x;
     cursorY = y;
-    *this << c;
+    putChar(c);
     cursorX = oldX;
     cursorY = oldY;
+}
+
+void Monitor::setBackgroundColor(VGAColor c) {
+    backgroundColor = c;
+}
+
+void Monitor::setForegroundColor(VGAColor c) {
+    foregroundColor = c;
+}
+
+VGAColor Monitor::getBackgroundColor() {
+    return backgroundColor;
+}
+
+VGAColor Monitor::getForegroundColor() {
+    return foregroundColor;
 }

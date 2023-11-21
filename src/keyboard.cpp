@@ -1,37 +1,69 @@
 #include "keyboard.h"
 
-Keyboard::Keyboard() {
-    ps2 = PS2();
-    for (int i = 0; i < 104; i++) {
-        keys[i] = false;
+static bool keys[126]{};
+static bool isScanning = false;
+
+void Keyboard::enableScanning() {
+    isScanning = true;
+    PS2::out(0xF4);
+    PS2::in();
+}
+
+void Keyboard::disableScanning() {
+    isScanning = false;
+    PS2::out(0xF5);
+    PS2::in();
+}
+
+void Keyboard::init() {
+    disableScanning();
+    for (bool& key : keys) {
+        key = false;
     }
 }
 
 bool Keyboard::setLed(LEDState state) {
-    ps2 << 0xED << (u8)state;
-    u8 ret;
-    ps2 >> ret;
-    return ret == 0xFA;
+    disableScanning();
+    PS2::out(0xED);
+    PS2::out(static_cast<u8>(state));
+    return PS2::in() == 0xFA;
 }
 
 bool Keyboard::echo() {
-    ps2 << 0xEE;
-    u8 ret;
-    ps2 >> ret;
-    return ret == 0xEE;
+    disableScanning();
+    PS2::out(0xEE);
+    return PS2::in() == 0xEE;
 }
 
 void Keyboard::setScanCodeSet(i8 code) {
-    ps2 << 0xF0;
-    u8 ret;
-    ps2 >> ret;
-    if (ret != 0xFA) {
+    disableScanning();
+    PS2::out(0);
+    if (PS2::in() != 0xFA) {
         return;
     }
-    ps2 << code;
-    ps2 >> ret;
+    PS2::out(code);
+    if (PS2::in() != 0xFA) {
+        return;
+    }
+}
+
+i8 Keyboard::getScanCodeSet() {
+    disableScanning();
+    PS2::out(0xF0);
+    PS2::out(0);
+    u8 ret = PS2::in();
     if (ret != 0xFA) {
-        while (true);
+        return -1;
+    }
+    switch (PS2::in()) {
+        case 0x43:
+            return 1;
+        case 0x41:
+            return 2;
+        case 0x3f:
+            return 3;
+        default:
+            return -2;
     }
 }
 
@@ -43,18 +75,20 @@ bool Keyboard::keyPressed(Key key) {
     return keys[(u8)key];
 }
 
-void Keyboard::test(Monitor &m) {
-    m.backgroundColor = keys[(u8)Key::W] ? VGAColor::LightGreen : VGAColor::LightRed;
-    m.setPos(1, 0, 'W');
-    m.backgroundColor = keys[(u8)Key::A] ? VGAColor::LightGreen : VGAColor::LightRed;
-    m.setPos(0, 1, 'A');
-    m.backgroundColor = keys[(u8)Key::S] ? VGAColor::LightGreen : VGAColor::LightRed;
-    m.setPos(1, 1, 'S');
-    m.backgroundColor = keys[(u8)Key::D] ? VGAColor::LightGreen : VGAColor::LightRed;
-    m.setPos(2, 1, 'D');
+void Keyboard::test() {
+    Monitor::setBackgroundColor(keys[(u8)Key::W] ? VGAColor::LightGreen : VGAColor::LightRed);
+    Monitor::setPos(1, 1, 'W');
+    Monitor::setBackgroundColor(keys[(u8)Key::A] ? VGAColor::LightGreen : VGAColor::LightRed);
+    Monitor::setPos(0, 2, 'A');
+    Monitor::setBackgroundColor(keys[(u8)Key::S] ? VGAColor::LightGreen : VGAColor::LightRed);
+    Monitor::setPos(1, 2, 'S');
+    Monitor::setBackgroundColor(keys[(u8)Key::D] ? VGAColor::LightGreen : VGAColor::LightRed);
+    Monitor::setPos(2, 2, 'D');
 }
 
-Key getCode(u8 scan) {
+Keyboard::Key getCode(u8 scan) {
+    using namespace Keyboard;
+
     switch (scan) {
         case 0x01: return Key::F9;
         case 0x03: return Key::F5;
@@ -142,7 +176,9 @@ Key getCode(u8 scan) {
     return Key::WWWSearch;
 }
 
-Key getE0Code(u8 code) {
+Keyboard::Key getE0Code(u8 code) {
+    using namespace Keyboard;
+
     switch (code) {
         case 0x10: return Key::WWWSearch;
         case 0x11: return Key::RightAlt;
@@ -183,41 +219,28 @@ Key getE0Code(u8 code) {
         case 0x7A: return Key::PageDown;
         case 0x7D: return Key::PageUp;
     }
+    return Key::WWWSearch;
 }
 
 void Keyboard::scan() {
-    u8 ret;
-    if (!isScanning) {
-        ps2 << 0xF3 << 0b11111110;
-        ps2 >> ret;
-        ps2 << 0xF4;
-        ps2 >> ret;
-        isScanning = true;
-        if (ret == 0xFA) {
-            return;
-        }
-    }
-    ps2 >> ret;
-    if (lastCode == ret) {
-        return; // TODO - For some reason, all key release events are followed by a key press. Fix this.
-    }
-    lastCode = ret;
+    enableScanning();
+    u8 ret = PS2::in();
+    bool enabled = true;
+    Key code;
     if (ret == 0xE0) {
-        ps2 >> lastCode;
-        if (lastCode == 0xF0) {
-            ps2 >> lastCode;
-            Key code = getE0Code(lastCode);
-            setKey(code, false);
-        } else {
-            Key code = getE0Code(lastCode);
-            setKey(code, true);
+        ret = PS2::in();
+        if (ret == 0xF0) {
+            ret = PS2::in();
+            enabled = false;
         }
+        code = getE0Code(ret);
     } else if (ret == 0xF0) {
-        ps2 >> lastCode;
-        Key code = getCode(lastCode);
-        setKey(code, false);
+        ret = PS2::in();
+        code = getCode(ret);
+        enabled = false;
     } else {
-        Key code = getCode(lastCode);
-        setKey(code, true);
+        code = getCode(ret);
     }
+    setKey(code, enabled);
+    PS2::in();
 }
