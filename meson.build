@@ -2,8 +2,10 @@ project('Todd', 'cpp')
 
 sources = [
 	'src/boot.s',
+	'src/common.cpp',
 	'src/gdt.s',
 	'src/gdt.cpp',
+	'src/idt.cpp',
 	'src/io.cpp',
 	'src/keyboard.cpp',
 	'src/main.cpp',

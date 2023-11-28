@@ -9,9 +9,13 @@ namespace Monitor {
 
     void putChar(u8 c);
     void putString(u8* c);
-    void putString(i8* c);
+    void putString(const i8* c);
     void resetColor();
     void writeHex(u8 c);
+    void writeHex(u16 c);
+    void writeHex(u32 c);
+    void writeDec(u32 c);
+    void writeBin(u32 c);
     void setPos(u8 x, u8 y, u8 c);
     void moveCursor();
     void scroll();

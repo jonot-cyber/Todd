@@ -99,7 +99,7 @@ void Monitor::putString(u8 *c) {
 }
 
 /* Also outputs a string to the screen. Used because chars are signed in C++ */
-void Monitor::putString(i8 *c) {
+void Monitor::putString( const i8 *c) {
     for (int i = 0; c[i]; i++) {
         Monitor::putChar(static_cast<u8>(c[i]));
     }
@@ -123,6 +123,43 @@ void Monitor::writeHex(u8 c) {
     u8 low = c & 0xF;
     putChar(hexDigits[hi]);
     putChar(hexDigits[low]);
+}
+
+void Monitor::writeHex(u16 c) {
+    u8 hi = c >> 8;
+    u8 lo = c;
+    writeHex(hi);
+    writeHex(lo);
+}
+
+void Monitor::writeHex(u32 c) {
+    u16 hi = c >> 16;
+    u16 lo = c;
+    writeHex(hi);
+    writeHex(lo);
+}
+
+void Monitor::writeDec(u32 c) {
+    if (c == 0) {
+        putChar('0');
+        return;
+    }
+    u32 x = 1;
+    while (c > x) {
+        x *= 10;
+    }
+    while (x > 1) {
+        x /= 10;
+        u32 part = (c / x) % 10;
+        putChar(part + '0');
+    }
+}
+
+void Monitor::writeBin(u32 c) {
+    for (int i = 31; i >= 0; i--) {
+        u8 value = (c >> i) & 1;
+        putChar(value ? '1' : '0');
+    }
 }
 
 void Monitor::setPos(u8 x, u8 y, u8 c) {

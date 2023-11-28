@@ -127,6 +127,7 @@ Keyboard::Key getCode(u8 scan) {
         case 0x31: return Key::N;
         case 0x32: return Key::B;
         case 0x33: return Key::H;
+        case 0x35: return Key::Y;
         case 0x3A: return Key::M;
         case 0x3B: return Key::J;
         case 0x3C: return Key::U;
