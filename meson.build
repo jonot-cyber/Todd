@@ -11,6 +11,8 @@ sources = [
 	'src/main.cpp',
 	'src/monitor.cpp',
 	'src/ps2.cpp',
+	'src/isr.cpp',
+	'src/timer.cpp',
 ]
 
 kernel = executable('Kernel', sources, link_args: ['-T../src/link.ld', '-m32', '-nostdlib'], cpp_args: ['-m32', '-nostdinc', '-fno-builtin'])

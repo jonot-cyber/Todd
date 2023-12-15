@@ -1,6 +1,8 @@
 #include "keyboard.h"
 #include "gdt.h"
 #include "idt.h"
+#include "isr.h"
+#include "timer.h"
 
 void outputToddOS() {
     Monitor::putString("Welcome To ");
@@ -87,17 +89,14 @@ extern "C" {
         Monitor::putString("GDT Initialized\n");
         IDT::init();
         Monitor::putString("IDT Initialized\n");
+        Timer::init(100);
+        asm volatile("sti"); // Enable interrupts
 
         PS2::init();
         Keyboard::init();
         Keyboard::setScanCodeSet(2);
         outputToddOS();
-        asm volatile ("int $0x3");
-        asm volatile ("int $0x4");
-        halt();
-        while (true) {
-            Keyboard::scan();
-            Keyboard::test();
-        }
+	Monitor::putChar('\n');
+        while (true) {}
     }
 }

@@ -32,8 +32,25 @@
 .globl isr29
 .globl isr30
 .globl isr31
+.globl irq0
+.globl irq1
+.globl irq2
+.globl irq3
+.globl irq4
+.globl irq5
+.globl irq6
+.globl irq7
+.globl irq8
+.globl irq9
+.globl irq10
+.globl irq11
+.globl irq12
+.globl irq13
+.globl irq14
+.globl irq15
 
 .extern isrHandler
+.extern irqHandler
 
 .jail:
     jmp .jail
@@ -88,159 +105,256 @@ isr4:
 
 isr5:
     cli
-    pushl 0
-    pushl 5
+    push $0x0
+    push $0x5
     jmp isr_common_stub
 
 isr6:
     cli
-    pushl 0
-    pushl 6
+    push $0x0
+    push $0x6
     jmp isr_common_stub
 
 isr7:
     cli
-    pushl 0
-    pushl 7
+    push $0x0
+    push $0x7
     jmp isr_common_stub
 
 isr8:
     cli
-    pushl 8
+    push $0x8
     jmp isr_common_stub
 
 isr9:
     cli
-    pushl 0
-    pushl 9
+    push 0
+    push $0x9
     jmp isr_common_stub
 
 isr10:
     cli
-    pushl 10
+    push $0xA
     jmp isr_common_stub
 
 isr11:
     cli
-    pushl 11
+    push $0xB
     jmp isr_common_stub
 
 isr12:
     cli
-    pushl 12
+    push $0xC
     jmp isr_common_stub
 
 isr13:
     cli
-    pushl 13
+    push $0xD
     jmp isr_common_stub
 
 isr14:
     cli
-    pushl 14
+    push $0xE
     jmp isr_common_stub
 
 isr15:
     cli
-    pushl 0
-    pushl 15
+    push $0x0
+    push $0xF
     jmp isr_common_stub
 
 isr16:
     cli
-    pushl 0
-    pushl 16
+    push $0x0
+    push $0x10
     jmp isr_common_stub
 
 isr17:
     cli
-    pushl 0
-    pushl 17
+    push $0x0
+    push $0x11
     jmp isr_common_stub
 
 isr18:
     cli
-    pushl 0
-    pushl 18
+    push $0x0
+    push $0x12
     jmp isr_common_stub
 
 isr19:
     cli
-    pushl 0
-    pushl 19
+    push $0x0
+    push $0x13
     jmp isr_common_stub
 
 isr20:
     cli
-    pushl 0
-    pushl 20
+    push $0x0
+    push $0x14
     jmp isr_common_stub
 
 isr21:
     cli
-    pushl 0
-    pushl 21
+    push $0x0
+    push $0x15
     jmp isr_common_stub
 
 isr22:
     cli
-    pushl 0
-    pushl 22
+    push $0x0
+    push $0x16
     jmp isr_common_stub
 
 isr23:
     cli
-    pushl 0
-    pushl 23
+    push $0x0
+    push $0x17
     jmp isr_common_stub
 
 isr24:
     cli
-    pushl 0
-    pushl 24
+    push $0x0
+    push $0x18
     jmp isr_common_stub
 
 isr25:
     cli
-    pushl 0
-    pushl 25
+    push $0x0
+    push $0x19
     jmp isr_common_stub
 
 isr26:
     cli
-    pushl 0
-    pushl 26
+    push $0x0
+    push $0x1A
     jmp isr_common_stub
 
 isr27:
     cli
-    pushl 0
-    pushl 27
+    push $0x0
+    push $0x1B
     jmp isr_common_stub
 
 isr28:
     cli
-    pushl 0
-    pushl 28
+    push $0x0
+    push $0x1C
     jmp isr_common_stub
 
 isr29:
     cli
-    pushl 0
-    pushl 29
+    push $0x0
+    push $0x1D
     jmp isr_common_stub
 
 isr30:
     cli
-    pushl 0
-    pushl 30
+    push $0x0
+    push $0x1E
     jmp isr_common_stub
 
 isr31:
     cli
-    pushl 0
-    pushl 31
+    push $0x0
+    push $0x1F
     jmp isr_common_stub
+
+irq0:
+    cli
+    push $0x0
+    push $32
+    jmp irq_common_stub
+
+irq1:
+    cli
+    push $0x0
+    push $33
+    jmp irq_common_stub
+
+irq2:
+    cli
+    push $0x0
+    push $34
+    jmp irq_common_stub
+
+irq3:
+    cli
+    push $0x0
+    push $35
+    jmp irq_common_stub
+
+irq4:
+    cli
+    push $0x0
+    push $36
+    jmp irq_common_stub
+
+irq5:
+    cli
+    push $0x0
+    push $37
+    jmp irq_common_stub
+
+irq6:
+    cli
+    push $0x0
+    push $38
+    jmp irq_common_stub
+
+irq7:
+    cli
+    push $0x0
+    push $39
+    jmp irq_common_stub
+
+irq8:
+    cli
+    push $0x0
+    push $40
+    jmp irq_common_stub
+
+irq9:
+    cli
+    push $0x0
+    push $41
+    jmp irq_common_stub
+
+irq10:
+    cli
+    push $0x0
+    push $42
+    jmp irq_common_stub
+
+irq11:
+    cli
+    push $0x0
+    push $43
+    jmp irq_common_stub
+
+irq12:
+    cli
+    push $0x0
+    push $44
+    jmp irq_common_stub
+
+irq13:
+    cli
+    push $0x0
+    push $45
+    jmp irq_common_stub
+
+irq14:
+    cli
+    push $0x0
+    push $46
+    jmp irq_common_stub
+
+irq15:
+    cli
+    push $0x0
+    push $47
+    jmp irq_common_stub
+
 
 isr_common_stub:
     pusha
@@ -259,3 +373,28 @@ isr_common_stub:
     mov %eax, %gs
     popa
     add $0x8, %esp
+    sti
+    iret
+
+irq_common_stub:
+    pusha
+    mov %ds, %ax
+    push %eax
+    mov $0x10, %ax
+    mov %eax, %ds
+    mov %eax, %es
+    mov %eax, %fs
+    mov %eax, %gs
+
+    call irqHandler
+
+    pop %ebx
+    mov %ebx, %ds
+    mov %ebx, %es
+    mov %ebx, %fs
+    mov %ebx, %gs
+
+    popa
+    add $0x8, %esp
+    sti
+    iret

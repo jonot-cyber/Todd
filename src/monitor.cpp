@@ -140,19 +140,12 @@ void Monitor::writeHex(u32 c) {
 }
 
 void Monitor::writeDec(u32 c) {
-    if (c == 0) {
-        putChar('0');
-        return;
+    if (c < 10) {
+       Monitor::putChar('0'+c);
+       return;
     }
-    u32 x = 1;
-    while (c > x) {
-        x *= 10;
-    }
-    while (x > 1) {
-        x /= 10;
-        u32 part = (c / x) % 10;
-        putChar(part + '0');
-    }
+    writeDec(c/10);
+    writeDec(c % 10);
 }
 
 void Monitor::writeBin(u32 c) {
