@@ -1,53 +1,56 @@
 #include "heap.h"
-#include "src/monitor.h"
+#include "memory.h"
 
 extern Memory::PageDirectory kernelDirectory;
 
-static i32 findSmallestHole(Heap::Heap* heap, u32 size, bool pageAlign) {
-	u32 iterator = 0;
-	while (iterator < heap->index.size) {
-		Heap::Header* header = (Heap::Header*)heap->index.lookup(iterator);
+u32 Heap::Heap::findSmallestHole(u32 size, bool pageAlign) {
+	u32 i;
+	for (i = 0; i < index.size; i++) {
+		// Find the current header
+		Header* header = index[i];
+		i32 holeSize = header->size;
 		if (pageAlign) {
-			u32 location = (u32)header;
-			i32 offset = 0;
-			if (((location + sizeof(Heap::Header)) & 0xFFFF000) != 0) {
-				offset = 0x1000 - (location+sizeof(Heap::Header))%0x1000;
-			}
-			i32 holeSize = (i32)header->size - offset;
-			if (holeSize >= (i32)size) {
-				break;
-			}
-		} else if (header->size >= size) {
+			// Account for alignment
+			holeSize -= 0x1000 - ((u32)header + sizeof(Header)) % 0x1000;
+		} else if (holeSize >= size) {
 			break;
 		}
-		iterator++;
 	}
-	if (iterator == heap->index.size) {
+	if (i == index.size) {
+		// We didn't find any holes
 		return -1;
 	}
-	return iterator;
+	return i;
 }
 
-static i8 headerLessThan(void* a, void* b) {
-	return ((Heap::Header*)a)->size < ((Heap::Header*)b)->size;
+u32 Heap::Heap::size() {
+	return endAddr - startAddr;
+}
+
+static i8 headerLessThan(Heap::Header* a, Heap::Header* b) {
+	return a->size < b->size;
 }
 
 Heap::Heap* Heap::Heap::create(u32 start, u32 end, u32 max, bool supervisor, bool readOnly) {
 	using namespace Heap;
+	// Allocate memory for the heap and create the index array
 	Heap* heap = (Heap*)Memory::kmalloc(sizeof(Heap));
-	heap->index = OrderedArray::Array::place((void*)start, INDEX_SIZE, &headerLessThan);
-	
+	heap->index = OrderedArray::Array<Header*>::place((void*)start, INDEX_SIZE, &headerLessThan);
+
+	// Offset the start to make room for the index array
 	start += sizeof(Header*) * INDEX_SIZE;
-	if ((start & 0xFFFFF000) != 0) {
-		start &= 0xFFFFF000;
-		start += 0x1000;
-	}
+	
+	// If start isn't aligned, align it
+	start = align4k(start);
+	
+	// Setup heap structure
 	heap->startAddr = start;
 	heap->endAddr = end;
 	heap->maxAddr = max;
 	heap->supervisor = supervisor;
 	heap->readonly = readOnly;
 
+	// Create a header for a hole that takes up the whole space.
 	Header* hole = (Header*)start;
 	hole->size = end - start;
 	hole->magic = MAGIC;
@@ -57,94 +60,89 @@ Heap::Heap* Heap::Heap::create(u32 start, u32 end, u32 max, bool supervisor, boo
 	return heap;
 }
 
-static void expand(Heap::Heap* heap, u32 newSize) {
-	if ((newSize & 0xFFFFF000) != 0) {
-		newSize &= 0xFFFFF000;
-		newSize += 0x1000;
+void Heap::Heap::expand(u32 newSize) {
+	// Make sure that the new size is aligned
+	newSize = align4k(newSize);
+	u32 oldSize = size();
+	for (u32 i = oldSize; i < newSize; i += 0x1000) {
+		kernelDirectory.getPage(startAddr + i, true)->alloc(supervisor, readonly);
 	}
-	u32 oldSize = heap->endAddr - heap->startAddr;
-	u32 i = oldSize;
-	while (i < newSize) {
-		kernelDirectory.getPage(heap->startAddr + i, true)->alloc(heap->supervisor, !heap->readonly);
-	}
-	heap->endAddr = heap->startAddr + newSize;
 }
 
-static u32 contract(Heap::Heap* heap, u32 newSize) {
-	if (newSize & 0x1000) {
-		newSize &= 0x1000;
-		newSize += 0x1000;
+u32 Heap::Heap::contract(u32 newSize) {
+	if (newSize >= size()) {
+		Monitor::writeString("Cannot contract to smaller size\n");
+		halt();
+	}
+	newSize = align4k(newSize);
+	if (newSize < MIN_SIZE) {
+		newSize = MIN_SIZE;
 	}
 
-	if (newSize < Heap::MIN_SIZE) {
-		newSize = Heap::MIN_SIZE;
+	// Free now unused pages
+	u32 oldSize = size();
+	for (u32 i = newSize; i < oldSize; i += 0x1000) {
+		kernelDirectory.getPage(startAddr + i, false)->free();
 	}
-
-	u32 oldSize = heap->endAddr - heap->startAddr;
-	u32 i = oldSize - 0x1000;
-	while (newSize < i) {
-		kernelDirectory.getPage(heap->startAddr + i, false)->free();
-		i -= 0x1000;
-	}
-	heap->endAddr = heap->startAddr += newSize;
+	
+	endAddr = startAddr + newSize;
 	return newSize;
 }
 
 void* Heap::Heap::alloc(u32 size, bool pageAlign) {
 	u32 newSize = size + sizeof(Header) + sizeof(Footer);
-	i32 iterator = findSmallestHole(this, newSize, pageAlign);
+	i32 iterator = findSmallestHole(newSize, pageAlign);
 
-	// No memory hole
+	// If there's no space, expand the heap and make some
 	if (iterator == -1) {
-		u32 oldLength = this->endAddr - this->startAddr;
-		u32 oldEndAddr = this->endAddr;
+		u32 oldLength = this->size();
+		u32 oldEndAddr = endAddr;
 
-		expand(this, oldLength + newSize);
-		u32 newLength = this->endAddr - this->startAddr;
+		expand(oldLength + newSize);
+		u32 newLength = this->size();
 
-		iterator = 0;
-		u32 idx = -1;
+		// Find the last header in memory
+		i32 idx = -1;
 		u32 value = 0;
-		while (iterator > this->index.size) {
-			u32 tmp = (u32)this->index.lookup(iterator);
+		for (u32 i = 0; i < index.size; i++) {
+			u32 tmp = (u32)index[i];
 			if (tmp > value) {
 				value = tmp;
-				idx = iterator;
+				idx = i;
 			}
-			idx++;
 		}
+		// If there are no headers in the heap, make
+		// one. Otherwise, fill the last hole
+		Header* header = nullptr;
 		if (idx == -1) {
-			Header* header = (Header*)oldEndAddr;
-			header->magic = MAGIC;
-			header->size = newLength - oldLength;
-			header->isHole = true;
-			Footer* footer = (Footer*)(oldEndAddr + header->size - sizeof(Footer));
-			footer->magic = MAGIC;
-			footer->header = header;
-			this->index.insert((void*)header);
+			header = (Header*)oldEndAddr;
 		} else {
-			Header* header = (Header*)this->index.lookup(idx);
-			header->magic = MAGIC;
-			header->size = newLength - oldLength;
-			header->isHole = true;
-			Footer* footer = (Footer*)(oldEndAddr + header->size - sizeof(Footer));
-			footer->magic = MAGIC;
-			footer->header = header;
-			this->index.insert((void*)header);
+			header = index[idx];
 		}
-		return this->alloc(size, pageAlign);
+		
+		header->magic = MAGIC;
+		header->size = newLength - oldLength;
+		header->isHole = true;
+		Footer* footer = (Footer*)(oldEndAddr + header->size - sizeof(Footer));
+		footer->magic = MAGIC;
+		footer->header = header;
+		index.insert(header);
+
+		// Try again with the new space
+		return alloc(size, pageAlign);
 	}
 
-	Header* originalHoleHeader = (Header*)this->index.lookup(iterator);
+	Header* originalHoleHeader = index[iterator];
 	u32 originalHolePosition = (u32)originalHoleHeader;
 	u32 originalHoleSize = originalHoleHeader->size;
 
-	if (originalHoleSize < sizeof(Header) + sizeof(Footer)) {
+	if (originalHoleSize - newSize < sizeof(Header) + sizeof(Footer)) {
 		size += originalHoleSize - newSize;
 		newSize = originalHoleSize;
 	}
 
-	if (pageAlign && originalHolePosition & 0xFFFFF000) {
+	// If we need to page align, create a new hole. Otherwise, the hole is done
+	if (pageAlign && originalHolePosition & 0xFFF) {
 		u32 newLocation = originalHolePosition + 0x1000 - (originalHolePosition & 0xFFF) - sizeof(Header);
 		Header* holeHeader = (Header*)originalHolePosition;
 		holeHeader->size = 0x1000 - (originalHolePosition & 0xFFF) - sizeof(Header);
@@ -156,9 +154,10 @@ void* Heap::Heap::alloc(u32 size, bool pageAlign) {
 		originalHolePosition = newLocation;
 		originalHoleSize = originalHoleSize - holeHeader->size;
 	} else {
-		this->index.remove(iterator);
+		index.remove(iterator);
 	}
 
+	// Make a new header and footer
 	Header* blockHeader = (Header*)originalHolePosition;
 	blockHeader->magic = MAGIC;
 	blockHeader->isHole = false;
@@ -173,24 +172,27 @@ void* Heap::Heap::alloc(u32 size, bool pageAlign) {
 		holeHeader->isHole = true;
 		holeHeader->size = originalHoleSize - newSize;
 		Footer* holeFooter = (Footer*)((u32)holeHeader + originalHoleSize - newSize - sizeof(Footer));
-		if ((u32)holeFooter < this->endAddr) {
+		if ((u32)holeFooter < endAddr) {
 			holeFooter->magic = MAGIC;
 			holeFooter->header = holeHeader;
 		}
-		this->index.insert((void*)holeHeader);
+		index.insert(holeHeader);
 	}
 
 	return (void*)((u32)blockHeader+sizeof(Header));
 }
 
 void Heap::Heap::free(void* p) {
-	if (p == 0) {
+	// We can't free a null pointer
+	if (p == nullptr) {
 		return;
 	}
 
+	// Get the header and the footer
 	Header* header = (Header*)((u32)p - sizeof(Header));
 	Footer* footer = (Footer*)((u32)header + header->size - sizeof(Footer));
 
+	// Make it a hole
 	header->isHole = true;
 	u8 doAdd = true;
 
@@ -210,34 +212,34 @@ void Heap::Heap::free(void* p) {
 		header->size += testHeader->size;
 		testFooter = (Footer*)((u32)testHeader + testHeader->size - sizeof(Footer));
 		footer = testFooter;
-		u32 iterator = 0;
-		while ((iterator < this->index.size) && (this->index.lookup(iterator) != (void*)testHeader)) {
-			iterator++;
+		u32 i = 0;
+		while ((i < index.size) && (index[i] != testHeader)) {
+			i++;
 		}
-		this->index.remove(iterator);
+		index.remove(i);
 	}
 
-	if ((u32)footer + sizeof(Footer) == this->endAddr) {
-		u32 oldLength = this->endAddr - this->startAddr;
-		u32 newLength = contract(this, (u32)header - this->startAddr);
+	if ((u32)footer + sizeof(Footer) == endAddr) {
+		u32 oldLength = size();
+		u32 newLength = contract((u32)header - startAddr);
 		if (header->size - (oldLength - newLength) > 0) {
 			header->size -= oldLength - newLength;
 			footer = (Footer*)((u32)header + header->size - sizeof(Footer));
 			footer->magic = MAGIC;
 			footer->header = header;
 		} else {
-			u32 iterator = 0;
-			while ((iterator < this->index.size)
-			       && (this->index.lookup(iterator) != (void*)testHeader)) {
-				iterator++;
+			u32 i = 0;
+			while ((i < index.size)
+			       && (index[i] != testHeader)) {
+				i++;
 			}
-			if (iterator < this->index.size) {
-				this->index.remove(iterator);
+			if (i < index.size) {
+				index.remove(i);
 			}
 		}
 	}
 
 	if (doAdd) {
-		this->index.insert((void*)header);
+		index.insert(header);
 	}
 }

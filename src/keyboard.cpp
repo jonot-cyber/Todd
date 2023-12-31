@@ -1,5 +1,8 @@
 #include "keyboard.h"
 
+#include "ps2.h"
+#include "monitor.h"
+
 static bool keys[126]{};
 static bool isScanning = false;
 

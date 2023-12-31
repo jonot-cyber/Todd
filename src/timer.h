@@ -3,5 +3,5 @@
 #include "common.h"
 
 namespace Timer {
-    void init(u32 frequency);
+	void init(u32 frequency);
 };
