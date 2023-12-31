@@ -81,6 +81,7 @@ void IDT::init() {
     entries[47].set(reinterpret_cast<u32>(irq15), 0x08, static_cast<Flags>(0x8E));
 
     flush(reinterpret_cast<u32>(&ptr));
+    asm volatile("sti"); // Enable interrupts
 }
 
 void IDT::Entry::set(u32 base, u16 sel, IDT::Flags f) {
@@ -92,17 +93,22 @@ void IDT::Entry::set(u32 base, u16 sel, IDT::Flags f) {
     flags = f;
 }
 
-void IDT::flush(u32 v) {
+static void IDT::flush(u32 v) {
     IDTFlush(v);
 }
 
 void isrHandler(Registers registers) {
+	if (ISR::handlerPresent(registers.intNo)) {
+		ISR::Handler handler = ISR::getHandler(registers.intNo);
+		handler(registers);
+		return;
+	}
     Monitor::putChar('\n');
     for (u8 i = 0; i < 80; i++) {
         Monitor::putChar('=');
     }
     Monitor::putChar('\n');
-    Monitor::putString("Received Interrupt: ");
+    Monitor::putString("Received Unhandled Interrupt: ");
     Monitor::writeDec(registers.intNo);
     Monitor::putChar('\n');
     for (u8 i = 0; i < 80; i++) {

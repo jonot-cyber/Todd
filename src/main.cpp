@@ -2,6 +2,8 @@
 #include "gdt.h"
 #include "idt.h"
 #include "isr.h"
+#include "src/memory.h"
+#include "src/monitor.h"
 #include "timer.h"
 
 void outputToddOS() {
@@ -31,6 +33,7 @@ void outputHeader() {
 }
 
 void outputPassFail(bool value) {
+	
     Monitor::resetColor();
     if (value) {
         Monitor::setForegroundColor(VGAColor::LightGreen);
@@ -43,36 +46,27 @@ void outputPassFail(bool value) {
 }
 
 void multibootInfo(MultiBoot* mboot) {
-    Monitor::putString("Flags: ");
-    Monitor::writeBin(mboot->flags);
-    Monitor::putChar('\n');
+	Monitor::printf("Flags: %b\n", mboot->flags);
     Monitor::putString("Memory Information: ");
     outputPassFail(mboot->memPresent());
     if (mboot->memPresent()) {
-        Monitor::putString("\n| Lower Memory Limit: ");
-        Monitor::writeDec(mboot->memLower);
-        Monitor::putString("KB\n");
-        Monitor::putString("| Upper Memory Limit: ");
-        Monitor::writeDec(mboot->memUpper);
-        Monitor::putString("KB\n");
+	    Monitor::printf("\n| Lower Memory Limit: %dKB\n", mboot->memLower);
+	    Monitor::printf("| Upper Memory Limit: %dKB\n", mboot->memUpper);
     }
     Monitor::putString("Boot Device: ");
     outputPassFail(mboot->bootDevicePresent());
     if (mboot->bootDevicePresent()) {
-        Monitor::putString("\n| Boot Device: ");
-        Monitor::writeHex(mboot->bootDevice);
+	    Monitor::printf("\n| Boot Device: 0x%x", mboot->bootDevice);
     }
     Monitor::putString("\nCMD Line: ");
     outputPassFail(mboot->cmdLinePresent());
     if (mboot->bootDevicePresent()) {
-        Monitor::putString("\n| Command Line: ");
-        Monitor::putString(reinterpret_cast<i8*>(mboot->cmdLine));
+	    Monitor::printf("\n| Command Line: %s", mboot->cmdLine);
     }
     Monitor::putString("\nBoot Modules: ");
     outputPassFail(mboot->modsPresent());
     if (mboot->modsPresent()) {
-        Monitor::putString("\n| #: ");
-        Monitor::writeDec(mboot->modsCount);
+	    Monitor::printf("\n| #: %d", mboot->modsCount);
         if (mboot->modsCount > 0) {
             halt();
         }
@@ -81,22 +75,17 @@ void multibootInfo(MultiBoot* mboot) {
 }
 
 extern "C" {
-    /* Initial function */
-    int main(MultiBoot* mboot) {
-        Monitor::init();
-        multibootInfo(mboot);
-        GDT::init();
-        Monitor::putString("GDT Initialized\n");
-        IDT::init();
-        Monitor::putString("IDT Initialized\n");
-        Timer::init(100);
-        asm volatile("sti"); // Enable interrupts
+	int main(MultiBoot* mboot) {
+		Monitor::init();
+		multibootInfo(mboot);
+		GDT::init();
+		IDT::init();
+	
+		outputToddOS();
+		Monitor::putChar('\n');
 
-        PS2::init();
-        Keyboard::init();
-        Keyboard::setScanCodeSet(2);
-        outputToddOS();
-	Monitor::putChar('\n');
-        while (true) {}
-    }
+		Memory::init(); // initialize paging
+
+		while (true) {}
+	}
 }

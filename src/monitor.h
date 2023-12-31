@@ -21,6 +21,63 @@ namespace Monitor {
     void scroll();
     u16 colorCharacter(u8 c);
 
+	void printf(const i8*);
+
+	template <typename T, typename... Args>
+	void printf(const i8* str, T value, Args... args) {
+		while (*str) {
+			if (*str == '%') {
+				i8 next = *(str+1);
+				switch (next) {
+				case '%':
+					Monitor::putChar('%');
+					break;
+				case 'b':
+				{
+					// Print a binary
+					u32 v = (u32)value;
+					Monitor::writeBin(v);
+					break;
+				}
+				case 'd':
+				{
+					// Print a decimal
+					u32 v = (u32)value;
+					Monitor::writeDec(v);
+					break;
+				}
+				case 'x':
+				{
+					// Print a hex
+					u32 v = (u32)value;
+					Monitor::writeHex(v);
+					break;
+				}
+				case 's':
+				{
+					// Print a string
+					const i8* v = (const i8*)value;
+					Monitor::putString(v);
+					break;
+				}
+				case 'c':
+				{
+					u32 v = (u32)value;
+					Monitor::putChar(v);
+					break;
+				}
+				}
+				str += 2;
+				// Recurse the function
+				printf(str, args...);
+				return;
+			} else {
+				Monitor::putChar(*str);
+			}
+			str++;
+		}
+	}
+
     void setBackgroundColor(VGAColor c);
     void setForegroundColor(VGAColor c);
     VGAColor getBackgroundColor();

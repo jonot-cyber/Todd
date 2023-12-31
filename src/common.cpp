@@ -8,7 +8,6 @@ void memset(u8* start, u8 v, u32 sz) {
 
 void halt() {
     while (true); // jail
-    asm volatile ("hlt");
 }
 
 bool MultiBoot::memPresent() {

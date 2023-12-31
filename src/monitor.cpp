@@ -165,6 +165,11 @@ void Monitor::setPos(u8 x, u8 y, u8 c) {
     cursorY = oldY;
 }
 
+void Monitor::printf(const i8* str) {
+	// No more parameters, so we can just print normally
+	Monitor::putString(str);
+}
+
 void Monitor::setBackgroundColor(VGAColor c) {
     backgroundColor = c;
 }
