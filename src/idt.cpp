@@ -33,7 +33,7 @@ void IDT::init() {
 	ptr.limit = sizeof(Entry) * 256 - 1;
 	ptr.base = (u32)&entries;
 
-	memset((u8*)&entries, 0, sizeof(Entry) * 256);
+	memset(&entries, 0, sizeof(Entry) * 256);
 
 	Flags flags = (Flags)0x8E;
 	entries[0].set((u32)isr0, 0x08, flags);

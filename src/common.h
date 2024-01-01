@@ -15,7 +15,16 @@ typedef char i8;
    @param value is what value to fill the range with
    @param size is how many bytes to fill with value
  */
-void memset(u8* start, u8 value, u32 size);
+void memset(void* start, u8 value, u32 size);
+
+/**
+   Copies memory from one place to another
+
+   @param src is where to copy from
+   @param dst is where to copy to
+   @param size is how many bytes to copy
+ */
+void memcpy(const void* src, void* dst, u32 size);
 
 /**
    Triggers an infinite loop. Used in case of errors.

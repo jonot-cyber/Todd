@@ -1,5 +1,6 @@
 #pragma once
 
+#include "string.h"
 #include "vga.h"
 
 namespace Monitor {
@@ -97,6 +98,7 @@ namespace Monitor {
 
 	   Formats: %% to print a %
 	   %s to print a string
+	   %s to print a dynamic "String"
 	   %c to print a character
 	   %d to print a decimal number
 	   %b to print a binary number
@@ -118,34 +120,39 @@ namespace Monitor {
 				case 'b':
 				{
 					// Print a binary
-					u32 v = (u32)value;
+					u32 v = *(u32*)&value;
 					Monitor::writeBin(v);
 					break;
 				}
 				case 'd':
 				{
 					// Print a decimal
-					u32 v = (u32)value;
+					u32 v = *(u32*)&value;
 					Monitor::writeDec(v);
 					break;
 				}
 				case 'x':
 				{
 					// Print a hex
-					u32 v = (u32)value;
+					u32 v = *(u32*)&value;
 					Monitor::writeHex(v);
 					break;
 				}
 				case 's':
 				{
 					// Print a string
-					const i8* v = (const i8*)value;
+					const i8* v = *(const i8**)&value;
 					Monitor::writeString(v);
+					break;
+				}
+				case 'S':
+				{
+					Monitor::writeString((*(Types::String*)&value).data);
 					break;
 				}
 				case 'c':
 				{
-					u32 v = (u32)value;
+					u32 v = *(u32*)&value;
 					Monitor::writeChar(v);
 					break;
 				}

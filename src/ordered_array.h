@@ -27,7 +27,7 @@ namespace OrderedArray {
 		static Array place(void* addr, u32 maxSize, typename LessThanPredicate<T>::Method lessThan) {
 			Array ret;
 			ret.array = (T*)addr;
-			memset((u8*)ret.array, 0, maxSize * sizeof(T));
+			memset(ret.array, 0, maxSize * sizeof(T));
 			ret.size = 0;
 			ret.maxSize = maxSize;
 			ret.lessThan = lessThan;

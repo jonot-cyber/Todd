@@ -15,12 +15,12 @@ mboot:
 	.4byte start
 
 .global start
-.extern main
+.extern kmain
 
 start:
 	push %ebx /* Push multiboot information to the stack */
 
 	cli /* Disable interrupts */
-	call main /* Call main method */
+	call kmain /* Call main method */
 	hlt /* Just tell the cpu to turn off if main ends */
   

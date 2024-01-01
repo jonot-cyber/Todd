@@ -1,9 +1,7 @@
 #pragma once
 
 #include "common.h"
-#include "monitor.h"
-#include "heap.h"
-#include "isr.h"
+#include "idt.h"
 
 namespace Memory {
 	// Memory block header
@@ -48,7 +46,7 @@ namespace Memory {
 		Page* getPage(u32, bool);
 	};
 
-	void init();
+	void init(u32 bytes=1024);
 
 	void pageFault(Registers);
 	
@@ -58,5 +56,30 @@ namespace Memory {
 	u32 kmallocPhysical(u32, u32*);
 	u32 kmallocAlignedPhysical(u32, u32*);
 	u32 kmalloc(u32);
+
+	template <typename T>
+	T* kmallocAligned(u32 count=1) {
+		u32 ptr = kmallocAligned(count * sizeof(T));
+		return (T*)ptr;
+	}
+
+	template <typename T>
+	T* kmallocPhysical(u32 count=1, u32* p=nullptr) {
+		u32 ptr = kmallocPhysical(count * sizeof(T), p);
+		return (T*)ptr;
+	}
+
+	template <typename T>
+	T* kmallocAlignedPhysical(u32 count=1, u32* p=nullptr) {
+		u32 ptr = kmallocAlignedPhysical(count * sizeof(T), p);
+		return (T*)ptr;
+	}
+	
+	template <typename T>
+	T* kmalloc(u32 count=1) {
+		u32 ptr = kmalloc(count * sizeof(T));
+		return (T*)ptr;
+	}
+	
 	void kfree(void*);
 };

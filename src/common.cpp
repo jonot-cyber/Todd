@@ -1,8 +1,16 @@
 #include "common.h"
 
-void memset(u8* start, u8 value, u32 size) {
+void memset(void* start, u8 value, u32 size) {
 	for (u32 i = 0; i < size; i++) {
-		*(start+i) = value;
+		*((u8*)start+i) = value;
+	}
+}
+
+void memcpy(const void* src, void* dst, u32 size) {
+	u8* dst2 = (u8*)dst;
+	u8* src2 = (u8*)src;
+	for (u32 i = 0; i < size; i++) {
+		dst2[i] = src2[i];
 	}
 }
 

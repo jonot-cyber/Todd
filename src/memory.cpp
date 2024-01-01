@@ -1,5 +1,9 @@
 #include "memory.h"
 
+#include "heap.h"
+#include "isr.h"
+#include "src/monitor.h"
+
 // The kernel's heap
 Heap::Heap* kernelHeap = nullptr;
 
@@ -44,7 +48,8 @@ u32 Memory::kmallocAlignedPhysical(u32 size, u32* physical) {
 }
 
 u32 Memory::kmalloc(u32 size) {
-	return kmallocInternal(size, false, nullptr);
+	u32 ret = kmallocInternal(size, false, nullptr);
+	return ret;
 }
 
 void Memory::kfree(void* ptr) {
@@ -105,7 +110,7 @@ void Memory::Page::alloc(bool isKernel, bool isWriteable) {
 	}
 	u32 index = firstFrame();
 	if (index == (u32)-1) {
-		Monitor::writeString("No free frames");
+		Monitor::writeString("PANIC: No free frames");
 		halt();
 	}
 	setFrame(index * 0x1000);
@@ -123,18 +128,18 @@ void Memory::Page::free() {
 	frame = 0;
 }
 
-void Memory::init() {
-	u32 memEndPage = 0x1000000; // Assuming physical memory is 16MB
+void Memory::init(u32 bytes) {
+	bytes *= 1024;
+	u32 nSize = bytes;
+	nFrames = 0x1000000 / 0x1000;
+	frames = kmalloc<u32>(indexFromBit(nFrames) / sizeof(u32));
+	memset(frames, 0, indexFromBit(nFrames));
 
-	nFrames = memEndPage / 0x1000;
-	frames = (u32*)kmalloc(indexFromBit(nFrames));
-	memset((u8*)frames, 0, indexFromBit(nFrames));
-
-	kernelDirectory = (PageDirectory*)kmallocAligned(sizeof(PageDirectory));
-	memset((u8*)kernelDirectory, 0, sizeof(PageDirectory));
+	kernelDirectory = kmallocAligned<PageDirectory>();
+	memset(kernelDirectory, 0, sizeof(PageDirectory));
 	currentDirectory = kernelDirectory;
 
-	for (u32 i = Heap::START; i < Heap::START + Heap::INITIAL_SIZE; i += 0x1000) {
+	for (u32 i = Heap::START; i < Heap::START + nSize; i += 0x1000) {
 		kernelDirectory->getPage(i, true);
 	}
 
@@ -144,15 +149,15 @@ void Memory::init() {
 		i += 0x1000;
 	}
 
-	for (u32 i = Heap::START; i < Heap::START + Heap::INITIAL_SIZE; i += 0x1000) {
+	for (u32 i = Heap::START; i < Heap::START + nSize; i += 0x1000) {
 		kernelDirectory->getPage(i, true)->alloc(false, false);
 	}
 
 	ISR::registerInterruptHandler(14, pageFault);
 
 	kernelDirectory->switchTo();
-	
-	kernelHeap = Heap::Heap::create(Heap::START, Heap::START + Heap::INITIAL_SIZE, 0xCFFFF000, false, false);
+
+	kernelHeap = Heap::Heap::create(Heap::START, Heap::START + nSize, 0xCFFFF000, false, false);
 }
 
 void Memory::PageDirectory::switchTo() {
@@ -173,8 +178,8 @@ Memory::Page* Memory::PageDirectory::getPage(u32 address, bool make) {
 	}
 	if (make) {
 		u32 tmp;
-		tables[tableIndex] = (PageTable*)kmallocAlignedPhysical(sizeof(PageTable), &tmp);
-		memset((u8*)tables[tableIndex], 0, 0x1000);
+		tables[tableIndex] = kmallocAlignedPhysical<PageTable>(1, &tmp);
+		memset(tables[tableIndex], 0, 0x1000);
 		tablesPhysical[tableIndex] = tmp | 0x7;
 		return &tables[tableIndex]->pages[address % 1024];
 	}
