@@ -93,6 +93,11 @@ namespace Monitor {
 	 */
 	u16 colorCharacter(u8 c);
 
+	void setBackgroundColor(VGAColor c);
+	void setForegroundColor(VGAColor c);
+	VGAColor getBackgroundColor();
+	VGAColor getForegroundColor();
+
 	/**
 	   Formatted print: base case.
 
@@ -103,6 +108,10 @@ namespace Monitor {
 	   %d to print a decimal number
 	   %b to print a binary number
 	   %x to print a hexadecimal number
+	   %C for fun color stuff:
+	   %Cb{x} for background color
+	   %Cf{x} for foreground color
+	   %Cr to reset color
 
 	   @param str is a string to output
 	 */
@@ -156,6 +165,40 @@ namespace Monitor {
 					Monitor::writeChar(v);
 					break;
 				}
+				case 'C':
+				{
+					i8 next = *(str+1);
+					if (next == 'f') {
+						i8 c = *(str+2);
+						u8 v;
+						if (c >= '0' && c <= '9') {
+							v = c - '0';
+						} else if (c >= 'A' && c <= 'F') {
+							v = c - 'A' + 10;
+						} else {
+							v = c - 'a' + 10;
+						}
+						Monitor::setForegroundColor((VGAColor)v);
+						str += 2;
+					} else if (next == 'b') {
+						i8 c = *(str+2);
+						u8 v;
+						if (c >= '0' && c <= '9') {
+							v = c - '0';
+						} else if (c >= 'A' && c <= 'F') {
+							v = c - 'A' + 10;
+						} else {
+							v = c - 'a' + 10;
+						}
+						Monitor::setBackgroundColor((VGAColor)v);
+						str += 2;
+					} else if (next == 'r') {
+						Monitor::resetColor();
+						str += 1;
+					}
+					printf(str, value, args...);
+					return;
+				}
 				}
 				str += 2;
 				// Recurse the function
@@ -167,9 +210,4 @@ namespace Monitor {
 			str++;
 		}
 	}
-
-	void setBackgroundColor(VGAColor c);
-	void setForegroundColor(VGAColor c);
-	VGAColor getBackgroundColor();
-	VGAColor getForegroundColor();
 };

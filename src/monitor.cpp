@@ -1,7 +1,7 @@
 #include "monitor.h"
 
 #include "io.h"
-#include "src/common.h"
+#include "common.h"
 
 static VGAColor backgroundColor = VGAColor::Black;
 static VGAColor foregroundColor = VGAColor::White;
@@ -58,6 +58,7 @@ void Monitor::writeChar(i8 c) {
         case '\b':
 		if (cursorX != 0) {
 			cursorX--;
+			Monitor::setPos(cursorX, cursorY, ' ');
 		}
 		break;
         case '\t':
@@ -161,9 +162,52 @@ void Monitor::setPos(u8 x, u8 y, u8 c) {
 	cursorY = oldY;
 }
 
+u8 hex2num(i8 c) {
+	if (c >= '0' && c <= '9') {
+		return c - '0';
+	}
+	if (c >= 'a' && c <= 'f') {
+		return c - 'a' + 10;
+	}
+	return c - 'A' + 10;
+}
+
 void Monitor::printf(const i8* str) {
-	// No more parameters, so we can just print normally
-	writeString(str);
+	while (*str != '\0') {
+		if (*str == '%') {
+			if (*(str+1) == 'C') {
+				switch (*(str+2)) {
+				case 'r':
+					Monitor::resetColor();
+					str += 3;
+					continue;
+				case 'f': {
+					i8 c = *(str+3);
+					u8 v;
+					str += 4;
+					v = hex2num(c);
+					Monitor::setForegroundColor((VGAColor)v);
+					continue;
+				}
+				case 'b': {
+					i8 c = *(str+3);
+					u8 v;
+					str += 4;
+					v = hex2num(c);
+					Monitor::setBackgroundColor((VGAColor)v);
+					continue;
+				}
+				}
+				if (*(str+2) == 'r') {
+					Monitor::resetColor();
+					str += 3;
+					continue;
+				}
+			}
+		}		
+		writeChar(*str);
+		str++;
+	}
 }
 
 void Monitor::setBackgroundColor(VGAColor c) {

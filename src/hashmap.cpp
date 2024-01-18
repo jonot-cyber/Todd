@@ -261,6 +261,7 @@ const u32 lookup_table[256] = {
 };
 
 u32 crc32(const u8* data, u32 len) {
+	assert(data != nullptr, "crc32: data is null");
 	u32 ret = ~0;
 	for (u32 i = 0; i < len; i++) {
 		ret = lookup_table[(u8)ret ^ data[i]] ^ (ret >> 8);

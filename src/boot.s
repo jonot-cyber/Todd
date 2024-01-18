@@ -18,6 +18,7 @@ mboot:
 .extern kmain
 
 start:
+	push %esp
 	push %ebx /* Push multiboot information to the stack */
 
 	cli /* Disable interrupts */

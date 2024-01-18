@@ -3,6 +3,8 @@
 #include "common.h"
 
 u32 strlen(const i8* src);
+u32 strcmp(const i8* src1, const i8* src2);
+u32 strcmpSpan(const i8* src, const i8* start, u32 size);
 
 /**
    Dynamically sized string

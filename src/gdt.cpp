@@ -35,5 +35,6 @@ void GDT::init() {
 }
 
 void GDT::flush(GDT::Pointer* ptr) {
+	assert(ptr != nullptr, "GDT::Flush: GDT Pointer is null");
 	GDTFlush((u32)ptr);
 }

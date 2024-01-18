@@ -39,10 +39,7 @@ namespace OrderedArray {
 		}
 		
 		void insert(T item) {
-			if (!lessThan) {
-				Monitor::writeString("PANIC: Array doesn't have less than");
-				halt();
-			}
+			assert(lessThan, "OrderedArray::Array<T>: Array doesn't have less than");
 			u32 i;
 			for (i = 0; i < size && lessThan(array[i], item); i++);
 			if (i == size) {

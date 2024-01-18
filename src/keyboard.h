@@ -13,139 +13,6 @@ namespace Keyboard {
 	};
 
 	/**
-	   Enum of keys on a keyboard.
-	 */
-	enum class Key : u8 {
-		Escape,
-		F1,
-		F2,
-		F3,
-		F4,
-		F5,
-		F6,
-		F7,
-		F8,
-		F9,
-		F10,
-		F11,
-		F12,
-		PrintScreen,
-		ScrollLock,
-		Pause,
-		BackTick,
-		One,
-		Two,
-		Three,
-		Four,
-		Five,
-		Six,
-		Seven,
-		Eight,
-		Nine,
-		Zero,
-		Minus,
-		Equal,
-		BackSpace,
-		Tab,
-		Q,
-		W,
-		E,
-		R,
-		T,
-		Y,
-		U,
-		I,
-		O,
-		P,
-		LeftBracket,
-		RightBracket,
-		BackSlash,
-		CapsLock,
-		A,
-		S,
-		D,
-		F,
-		G,
-		H,
-		J,
-		K,
-		L,
-		SemiColon,
-		Apostrophe,
-		Enter,
-		LeftShift,
-		Z,
-		X,
-		C,
-		V,
-		B,
-		N,
-		M,
-		Comma,
-		Period,
-		Slash,
-		RightShift,
-		LeftControl,
-		LeftSuper,
-		LeftAlt,
-		Space,
-		RightAlt,
-		Fn,
-		RightSuper,
-		RightControl,
-		Insert,
-		Home,
-		PageUp,
-		Delete,
-		End,
-		PageDown,
-		Up,
-		Left,
-		Down,
-		Right,
-		NumLock,
-		NumSlash,
-		NumAsterisk,
-		NumMinus,
-		Num7,
-		Num8,
-		Num9,
-		Num4,
-		Num5,
-		Num6,
-		NumPlus,
-		Num1,
-		Num2,
-		Num3,
-		Num0,
-		NumPeriod,
-		NumEnter,
-		WWWSearch,
-		PreviousTrack,
-		WWWFavorites,
-		WWWRefresh,
-		VolumeDown,
-		Mute,
-		WWWStop,
-		Calculator,
-		Apps,
-		WWWForward,
-		VolumeUp,
-		PlayPause,
-		Power,
-		WWWBack,
-		WWWHome,
-		Stop,
-		Sleep,
-		MyComputer,
-		Email,
-		NextTrack,
-		MediaSelect,
-		Wake,
-
-	};
-
-	/**
 	   Initialize the keyboard
 	 */
 	void init();
@@ -153,12 +20,12 @@ namespace Keyboard {
 	/**
 	   Enable scanning keys
 	 */
-	void enableScanning();
+	bool enableScanning();
 
 	/**
 	   Disable scanning keys
 	 */
-	void disableScanning();
+	bool disableScanning();
 
 	/**
 	   Set the states of the LEDs
@@ -187,19 +54,14 @@ namespace Keyboard {
 	/**
 	   Scan from the keyboard
 	 */
-	void scan();
+	i8 scan();
 
 	/**
 	   Check if a key is currently pressed
 
 	   @param key is the key to check
 	 */
-	bool keyPressed(Key key);
-
-	/**
-	   I forgor
-	 */
-	void test();
+	bool keyPressed(u8 key);
 
 	/**
 	   Set if a key is pressed
@@ -207,5 +69,7 @@ namespace Keyboard {
 	   @param key is the key to set
 	   @param enabled is whether it should be enabled
 	 */
-	void setKey(Key key, bool enabled);
+	void setKey(u8 key, bool enabled);
+
+	i8 translateCode(i8 in);
 }

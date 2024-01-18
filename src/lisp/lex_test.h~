@@ -1,0 +1,8 @@
+#pragma once
+
+#include "../common.h"
+
+const i8* LEX_TEST = "                           \
+(define foo 3)\n\
+(+ foo 2)\n\
+";

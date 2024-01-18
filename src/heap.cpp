@@ -3,16 +3,23 @@
 
 extern Memory::PageDirectory kernelDirectory;
 
-u32 Heap::Heap::findSmallestHole(u32 size, bool pageAlign) {
+u32 Heap::Heap::findSmallestHole(u32 sz, bool pageAlign) {
 	u32 i;
 	for (i = 0; i < index.size; i++) {
 		// Find the current header
 		Header* header = index[i];
-		u32 holeSize = header->size;
 		if (pageAlign) {
 			// Account for alignment
-			holeSize -= 0x1000 - ((u32)header + sizeof(Header)) % 0x1000;
-		} else if (holeSize >= size) {
+			u32 location = (u32)header;
+			i32 offset = 0;
+			if (((location+sizeof(Header)) & 0xFFFFF000) != 0) {
+				offset = 0x1000 - (location+sizeof(Header)) % 0x1000;
+			}
+			u32 holeSize = header->size - offset;
+			if (holeSize >= sz) {
+				break;
+			}
+		} else if (header->size >= sz) {
 			break;
 		}
 	}
@@ -35,6 +42,10 @@ Heap::Heap* Heap::Heap::create(u32 start, u32 end, u32 max, bool supervisor, boo
 	using namespace Heap;
 	// Allocate memory for the heap and create the index array
 	Heap* heap = Memory::kmalloc<Heap>();
+
+	assert(start % 0x1000 == 0, "Heap::Heap::create: start not page aligned");
+	assert(end % 0x1000 == 0, "Heap::Heap::create: end not page aligned");
+	
 	heap->index = OrderedArray::Array<Header*>::place((void*)start, INDEX_SIZE, &headerLessThan);
 
 	// Offset the start to make room for the index array
@@ -61,13 +72,15 @@ Heap::Heap* Heap::Heap::create(u32 start, u32 end, u32 max, bool supervisor, boo
 }
 
 void Heap::Heap::expand(u32 newSize) {
+	assert(newSize > endAddr - startAddr, "Heap::Heap::expand: Cannot shrink in expand");
 	// Make sure that the new size is aligned
 	if ((newSize & 0xFFFFF000) != 0) {
 		newSize &= 0xFFFFF000;
 		newSize += 0x1000;
 	}
-	newSize = align4k(newSize);
-	u32 oldSize = size();
+	assert(startAddr + newSize <= maxAddr, "Heap::Heap::expand: too big!");
+	//newSize = align4k(newSize);
+	u32 oldSize = size();	
 	for (u32 i = oldSize; i < newSize; i += 0x1000) {
 		Memory::Page* page = kernelDirectory.getPage(startAddr + i, true);
 		page->alloc(supervisor, readonly);
@@ -76,11 +89,11 @@ void Heap::Heap::expand(u32 newSize) {
 }
 
 u32 Heap::Heap::contract(u32 newSize) {
-	if (newSize >= size()) {
-		Monitor::writeString("PANIC: Cannot contract to smaller size\n");
-		halt();
+	assert(newSize < endAddr-startAddr, "Heap::Heap::contract: Cannot contract to a smaller size");
+	if (newSize & 0x1000) {
+		newSize &= 0x1000;
+		newSize += 0x1000;
 	}
-	newSize = align4k(newSize);
 	if (newSize < MIN_SIZE) {
 		newSize = MIN_SIZE;
 	}
@@ -102,8 +115,9 @@ void* Heap::Heap::alloc(u32 size, bool pageAlign) {
 	if (iterator == -1) {
 		u32 oldLength = this->size();
 		u32 oldEndAddr = endAddr;
-	
+		
 		expand(oldLength + newSize);
+	
 		u32 newLength = this->size();
 
 		// Find the last header in memory

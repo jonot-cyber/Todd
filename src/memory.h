@@ -3,6 +3,10 @@
 #include "common.h"
 #include "idt.h"
 
+extern "C" {
+	void copyPagePhysical(u32 a, u32 b);
+}
+
 namespace Memory {
 	// Memory block header
 	struct Header {
@@ -27,10 +31,14 @@ namespace Memory {
 
 		void alloc(bool, bool);
 		void free();
+
+		void copyPhysical(Page* other);
 	};
 
 	struct PageTable {
 		Page pages[1024];
+
+		PageTable* clone(u32* physicalAddress);
 	};
 
 	struct PageDirectory {
@@ -44,6 +52,7 @@ namespace Memory {
 		void switchTo();
 
 		Page* getPage(u32, bool);
+		PageDirectory* clone();
 	};
 
 	void init(u32 bytes=1024);
@@ -80,6 +89,8 @@ namespace Memory {
 		u32 ptr = kmalloc(count * sizeof(T));
 		return (T*)ptr;
 	}
+
+	Memory::PageDirectory* getCurrentDirectory();
 	
 	void kfree(void*);
 };

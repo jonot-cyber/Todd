@@ -8,6 +8,8 @@ typedef short i16;
 typedef unsigned char u8;
 typedef char i8;
 
+extern u32 initialEsp;
+
 /**
    Clears a section of memory to a value
 
@@ -38,6 +40,12 @@ void halt();
    @param in the addr to take in
  */
 u32 align4k(u32 in);
+
+/**
+   Assert that a condition is true. Doesn't do anything in release
+   mode, but in debug will stop execution and display a message
+ */
+void assert(bool condition, const i8* message);
 
 /**
    A module for use in multiboot. As of now unused

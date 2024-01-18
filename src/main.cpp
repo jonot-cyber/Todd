@@ -1,26 +1,14 @@
 #include "gdt.h"
 #include "idt.h"
+#include "keyboard.h"
 #include "memory.h"
 #include "monitor.h"
-#include "hashmap.h"
+#include "lexer.h"
+#include "timer.h"
+#include "task.h"
 
 void outputToddOS() {
-	Monitor::writeString("Welcome To ");
-	Monitor::setBackgroundColor(VGAColor::Blue);
-	Monitor::setForegroundColor(VGAColor::LightRed);
-	Monitor::writeChar('T');
-	Monitor::setForegroundColor(VGAColor::LightBrown);
-	Monitor::writeChar('o');
-	Monitor::setForegroundColor(VGAColor::LightGreen);
-	Monitor::writeChar('d');
-	Monitor::setForegroundColor(VGAColor::LightCyan);
-	Monitor::writeChar('d');
-	Monitor::setForegroundColor(VGAColor::LightBlue);
-	Monitor::writeChar('O');
-	Monitor::setForegroundColor(VGAColor::LightMagenta);
-	Monitor::writeChar('S');
-	Monitor::resetColor();
-	Monitor::writeChar('\n');
+	Monitor::printf("%CrWelcome to %Cb1%CfcT%Cfeo%Cfad%Cfbd%Cf9O%CfdS%Cr\n");
 }
 
 void outputHeader() {
@@ -31,16 +19,11 @@ void outputHeader() {
 }
 
 void outputPassFail(bool value) {
-	
-	Monitor::resetColor();
 	if (value) {
-		Monitor::setForegroundColor(VGAColor::LightGreen);
-		Monitor::writeString("PASS");
+		Monitor::printf("%CfaPASS%Cr");
 	} else {
-		Monitor::setForegroundColor(VGAColor::LightRed);
-		Monitor::writeString("FAIL");
+		Monitor::printf("%CfcFAIL%Cr");
 	}
-	Monitor::resetColor();
 }
 
 void multibootInfo(MultiBoot* mboot) {
@@ -72,26 +55,109 @@ void multibootInfo(MultiBoot* mboot) {
 	Monitor::writeChar('\n');
 }
 
-#include "string.h"
+const i8* tokenTypeToString(Lisp::TokenType tokenType) {
+	switch (tokenType) {
+	case Lisp::TokenType::LEFT:
+		return "LEFT";
+	case Lisp::TokenType::RIGHT:
+		return "RIGHT";
+	case Lisp::TokenType::PATH:
+		return "PATH";
+	case Lisp::TokenType::DOT:
+		return "DOT";
+	case Lisp::TokenType::QUOTE_LEFT:
+		return "QUOTE_LEFT";
+	case Lisp::TokenType::QUOTE_SYMBOL:
+		return "QUOTE_SYMBOL";
+	case Lisp::TokenType::INT:
+		return "INT";
+	case Lisp::TokenType::SYMBOL:
+		return "SYMBOL";
+	case Lisp::TokenType::STRING:
+		return "STRING";
+	case Lisp::TokenType::EOF:
+		return "EOF";
+	default:
+		return "???";
+	}
+}
+
+void outputToken(Lisp::Token const& token) {
+	if (token.type == Lisp::TokenType::EOF) {
+		Monitor::writeString("EOF\n");
+		return;
+	}
+	i8* buf = Memory::kmalloc<i8>(token.end - token.start + 1);
+	memcpy(token.start, buf, token.end - token.start);
+	buf[token.end - token.start] = '\0';
+	Monitor::printf("%s '%s'\n", tokenTypeToString(token.type), buf);
+	Memory::kfree(buf);
+}
+
+#include "lex_test.h"
+#include "parser.h"
+#include "exe.h"
+#include "lexer.h"
+
+static i8 buf[256];
+
 extern "C" {
-	int kmain(MultiBoot* mboot) {
-		Monitor::init();
+	int kmain(MultiBoot* mboot, u32 initialStack) {
+		initialEsp = initialStack;
 		GDT::init();
 		IDT::init();
-		Memory::init(); // initialize paging
-		multibootInfo(mboot);
-	
-		outputToddOS();
+		Monitor::init();
+		asm volatile("sti");
+		Timer::init(1000);
+		Memory::init();
+		Keyboard::init();
 
-		const u32 n = 1024;
-		u32 allocated = 0;
-		for (int i = 0; i < 1000; i++) {
-			u32 tmp = Memory::kmalloc(n);
-			allocated += n+20;
-			Monitor::printf("Allocated %d kb\n", allocated/n);
+		Lisp::EAST::Scope scope;
+		scope.init();
+
+		memset(buf, 0, 256);
+		u32 bufI = 0;
+		u32 balance = 0;
+
+		Monitor::writeString("=> ");
+		while (true) {
+			i8 key = Keyboard::scan();
+			if (key <= 0) {
+				continue;
+			}
+			if (key >= 'A' && key <= 'Z') {
+				continue;
+			}
+			i8 translated = Keyboard::translateCode(key);
+			Monitor::writeChar(translated);
+			if (translated == '\n' && balance == 0) {
+				bufI = 0;
+				const i8* toParse = buf;
+				Lisp::AST::ListContents* lc = Lisp::parse(&toParse);
+				scope.exec(lc);
+				memset(buf, 0, 256);
+				Monitor::writeString("=> ");
+			} else if (translated == '\n') {
+				Monitor::writeString(".. ");
+			} else if (translated == '\b') {
+				if (buf[bufI - 1] == '(') {
+					balance--;
+				} else if (buf[bufI - 1] == ')') {
+					balance++;
+				}
+				bufI--;
+			} else {
+				if (translated == '(') {
+					balance++;
+				}
+				if (translated == ')') {
+					balance--;
+				}
+				buf[bufI++] = translated;
+			}
 		}
 		halt();
-		
+		Task::init();
 		return 0;
 	}
 }

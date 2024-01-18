@@ -2,10 +2,10 @@
 
 #include "heap.h"
 #include "isr.h"
-#include "src/monitor.h"
+#include "monitor.h"
 
 // The kernel's heap
-Heap::Heap* kernelHeap = nullptr;
+static Heap::Heap* kernelHeap = nullptr;
 
 extern u32 end;
 u32 placementAddress = (u32)&end;
@@ -53,11 +53,7 @@ u32 Memory::kmalloc(u32 size) {
 }
 
 void Memory::kfree(void* ptr) {
-	if (kernelHeap == nullptr) {
-		// You can't free if the heap hasn't been made yet
-		Monitor::writeString("PANIC: Tried to free before heap initialization\n");
-		halt();
-	}
+	assert(kernelHeap, "Memory::kfree: tried to free without heap");
 	kernelHeap->free(ptr);
 }
 
@@ -109,10 +105,7 @@ void Memory::Page::alloc(bool isKernel, bool isWriteable) {
 		return;
 	}
 	u32 index = firstFrame();
-	if (index == (u32)-1) {
-		Monitor::writeString("PANIC: No free frames");
-		halt();
-	}
+	assert(index != (u32)-1, "Memory::Page::alloc: No free frames");
 	setFrame(index * 0x1000);
 	present = true;
 	rw = isWriteable;
@@ -128,28 +121,47 @@ void Memory::Page::free() {
 	frame = 0;
 }
 
+void Memory::Page::copyPhysical(Memory::Page* other) {
+	copyPagePhysical(frame*0x1000, other->frame*0x1000);
+}
+
+Memory::PageTable* Memory::PageTable::clone(u32* physicalAddress) {
+	Memory::PageTable* table = Memory::kmallocAlignedPhysical<Memory::PageTable>(1, physicalAddress);
+	memset(table, 0, sizeof(Memory::PageTable));
+
+	for (u32 i = 0; i < 1024; i++) {
+		if (!pages[i].frame) {
+			continue;
+		}
+		table->pages[i].alloc(false, false);
+		if (pages[i].present) table->pages[i].present = 1;
+		if (pages[i].rw) table->pages[i].rw = 1;
+		if (pages[i].user) table->pages[i].user = 1;
+		if (pages[i].accessed) table->pages[i].accessed = 1;
+		if (pages[i].dirty) table->pages[i].dirty = 1;
+		pages[i].copyPhysical(&table->pages[i]);
+	}
+	return table;
+}
+
 void Memory::init(u32 bytes) {
-	bytes *= 1024;
-	u32 nSize = bytes;
 	nFrames = 0x1000000 / 0x1000;
 	frames = kmalloc<u32>(indexFromBit(nFrames) / sizeof(u32));
 	memset(frames, 0, indexFromBit(nFrames));
 
 	kernelDirectory = kmallocAligned<PageDirectory>();
 	memset(kernelDirectory, 0, sizeof(PageDirectory));
-	currentDirectory = kernelDirectory;
+	kernelDirectory->physicalAddr = (u32)kernelDirectory->tablesPhysical;
 
-	for (u32 i = Heap::START; i < Heap::START + nSize; i += 0x1000) {
+	for (u32 i = Heap::START; i < Heap::START + Heap::INITIAL_SIZE; i += 0x1000) {
 		kernelDirectory->getPage(i, true);
 	}
 
-	u32 i = 0;
-	while (i < placementAddress+0x1000) {
+	for (u32 i = 0; i < placementAddress+0x1000; i += 0x1000) {
 		kernelDirectory->getPage(i, true)->alloc(false, false);
-		i += 0x1000;
 	}
 
-	for (u32 i = Heap::START; i < Heap::START + nSize; i += 0x1000) {
+	for (u32 i = Heap::START; i < Heap::START + Heap::INITIAL_SIZE; i += 0x1000) {
 		kernelDirectory->getPage(i, true)->alloc(false, false);
 	}
 
@@ -157,12 +169,17 @@ void Memory::init(u32 bytes) {
 
 	kernelDirectory->switchTo();
 
-	kernelHeap = Heap::Heap::create(Heap::START, Heap::START + nSize, 0xCFFFF000, false, false);
+	kernelHeap = Heap::Heap::create(Heap::START, Heap::START + Heap::INITIAL_SIZE, 0xCFFFF000, false, false);
+
+	currentDirectory = kernelDirectory;
+//	currentDirectory = kernelDirectory->clone();
+//	currentDirectory->physicalAddr = kernelDirectory->physicalAddr;
+//	currentDirectory->switchTo();
 }
 
 void Memory::PageDirectory::switchTo() {
 	currentDirectory = this;
-	asm volatile("mov %0, %%cr3":: "r"(&tablesPhysical));
+	asm volatile("mov %0, %%cr3":: "r"(physicalAddr));
 	u32 cr0;
 	asm volatile("mov %%cr0, %0":"=r"(cr0));
 	// Enable paging;
@@ -184,6 +201,33 @@ Memory::Page* Memory::PageDirectory::getPage(u32 address, bool make) {
 		return &tables[tableIndex]->pages[address % 1024];
 	}
 	return nullptr;
+}
+
+Memory::PageDirectory* Memory::PageDirectory::clone() {
+	u32 physical;
+	Memory::PageDirectory* ret = Memory::kmallocAlignedPhysical<PageDirectory>(1, &physical);
+	memset(ret, 0, sizeof(Memory::PageDirectory));
+
+	// Get offset of tables from start
+	u32 offset = (u32)ret->tablesPhysical - (u32)ret;
+	ret->physicalAddr = physical + offset;
+
+	for (u32 i = 0; i < 1024; i++) {
+		if (!tables[i]) {
+			continue;
+		}
+
+		if (kernelDirectory->tables[i] == tables[i]) {
+			// In the kernel, use pointer
+			ret->tables[i] = tables[i];
+			ret->tablesPhysical[i] = tablesPhysical[i];
+		} else {
+			u32 p2;
+			ret->tables[i] = tables[i]->clone(&p2);
+			ret->tablesPhysical[i] = p2 | 0x07;
+		}
+	}
+	return ret;
 }
 
 void Memory::pageFault(Registers registers) {

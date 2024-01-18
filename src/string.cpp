@@ -4,11 +4,44 @@
 #include "monitor.h"
 
 u32 strlen(const i8* src) {
+	assert(src != nullptr, "strlen: src is null");
 	const i8* ptr = src;
 	while (*ptr != '\0') {
 		ptr++;
 	}
 	return ptr - src;
+}
+
+u32 strcmp(const i8* src1, const i8* src2) {
+	for (u32 i = 0; i < 1000; i++) {
+		if (src1[i] == '\0' && src2[i] == '\0') {
+			return 0;
+		}
+		if (src1[i] == src2[i]) {
+			continue;
+		}
+		if (src1[i] < src2[i]) {
+			return -1;
+		}
+		return 1;
+	}
+	assert(false, "strcmp: Maxium string length exceeded");
+}
+
+u32 strcmpSpan(const i8* src, const i8* start, u32 size) {
+	for (u32 i = 0; i < size; i++) {
+		if (src[i] == '\0') {
+			return -1;
+		}
+		if (src[i] == start[i]) {
+			continue;
+		}
+		if (src[i] < start[i]) {
+			return -1;
+		}
+		return 1;
+	}
+	return 0;
 }
 
 Types::String::String() {
@@ -23,6 +56,7 @@ Types::String::String(u32 length) {
 }
 
 Types::String::String(const i8* src) {
+	assert(src != nullptr, "Types::String::String: src is null");
 	len = strlen(src);
 	data = Memory::kmalloc<i8>(len+1);
 	memcpy(src, data, len);
@@ -33,7 +67,7 @@ Types::String::String(const i8* src) {
 void* _Unwind_Resume=0;
 void* __gxx_personality_v0=0;
 
-Types::String::~String(){
+Types::String::~String() {
 	Memory::kfree(data);
 }
 
