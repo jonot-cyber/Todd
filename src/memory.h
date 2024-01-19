@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common.h"
+#include "idt.h"
 
 namespace Memory {
 	void init();
@@ -10,6 +10,8 @@ namespace Memory {
 	void* kmallocPhysical(u32,u32*);
 	void* kmallocAlignedPhysical(u32, u32*);
 	void kfree(void*);
+
+	void pageFault(Registers);
 
 	template <typename T>
 	T* kmalloc(u32 count = 1) {
@@ -30,4 +32,13 @@ namespace Memory {
 	T* kmallocAlignedPhysical(u32 count = 1, u32* physical = nullptr) {
 		return (T*)kmallocAlignedPhysical(sizeof(T) * count, physical);
 	}
+
+	// Paging stuff
+	struct PageTable {
+		u32 entries[1024];
+	};
+
+	struct PageDirectory {
+		PageTable* entries[1024];
+	};
 };
