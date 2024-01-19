@@ -6,7 +6,7 @@ sources = [
 	'gdt.s',
 	'gdt.cpp',
         'hashmap.cpp',
-	'heap.cpp',
+#	'heap.cpp',
 	'idt.cpp',
 	'io.cpp',
         'isr.cpp',
@@ -14,11 +14,11 @@ sources = [
 	'main.cpp',
 	'memory.cpp',
 	'monitor.cpp',
-	'ordered_array.cpp',
+#	'ordered_array.cpp',
         'process.s',
 	'ps2.cpp',
         'string.cpp',
-        'task.cpp',
+#        'task.cpp',
 	'timer.cpp',
 ]
 

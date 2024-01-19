@@ -5,7 +5,6 @@
 #include "monitor.h"
 #include "lexer.h"
 #include "timer.h"
-#include "task.h"
 
 void outputToddOS() {
 	Monitor::printf("%CrWelcome to %Cb1%CfcT%Cfeo%Cfad%Cfbd%Cf9O%CfdS%Cr\n");
@@ -157,7 +156,6 @@ extern "C" {
 			}
 		}
 		halt();
-		Task::init();
 		return 0;
 	}
 }
