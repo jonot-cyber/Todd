@@ -6,7 +6,7 @@ sources = [
 	'gdt.s',
 	'gdt.cpp',
         'hashmap.cpp',
-#	'heap.cpp',
+	'heap.cpp',
 	'idt.cpp',
 	'io.cpp',
         'isr.cpp',

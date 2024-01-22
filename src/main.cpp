@@ -97,6 +97,7 @@ void outputToken(Lisp::Token const& token) {
 #include "parser.h"
 #include "exe.h"
 #include "lexer.h"
+#include "heap.h"
 
 static i8 buf[256];
 
@@ -108,7 +109,7 @@ extern "C" {
 		Monitor::init();
 		asm volatile("sti");
 		Timer::init(1000);
-		Memory::init();
+		Memory::init(mboot->memUpper * 1024);
 		Keyboard::init();
 
 		Lisp::EAST::Scope scope;

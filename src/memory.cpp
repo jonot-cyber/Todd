@@ -1,12 +1,21 @@
 #include "memory.h"
+
+#include "heap.h"
 #include "idt.h"
 #include "isr.h"
 #include "monitor.h"
 
 extern u32 end;
 u32 allocPointer = (u32)&end;
+bool heapExists = false;
 
 void* kmallocInternal(u32 size, bool align, u32* physical) {
+	if (heapExists) {
+		assert(!align, "kmallocInternal: heap doesn't support alignment");
+		void* tmp = Heap::malloc(size);
+		*physical = (u32)tmp;
+		return tmp;
+	}
 	if (align) {
 		allocPointer = align4k(allocPointer);
 	}
@@ -35,30 +44,32 @@ void* Memory::kmallocAlignedPhysical(u32 size, u32* physical) {
 }
 
 void Memory::kfree(void* ptr) {
-	// TODO: Implement
+	assert(heapExists, "Memory::kfree: Heap not initialized");
+	Heap::free(ptr);
 }
 
-void Memory::init() {
+u32 Memory::virtualToPhysical(u32 virt) {
+	PageTable* tables = (PageTable*)0xFFC00000;
+	u32 ret = *(u32*)&tables[virt / 0x1000];
+	ret &= 0xFFFFF000;
+	return ret + virt % 0x1000;
+}
+
+void Memory::init(u32 bytes) {
 	PageDirectory* pageDirectory = kmallocAligned<PageDirectory>();
 	memset(pageDirectory, 0, sizeof(PageDirectory));
 
-	PageTable* pTable1 = kmallocAligned<PageTable>();
-	memset(pTable1, 0, sizeof(PageTable));
-	pageDirectory->entries[0] = (PageTable*)((u32)pTable1 | 3);
-
-	u32 i = 0;
-	while (i < allocPointer + 0x1000) {
-		u32 addr = i / 0x1000;
-		u32 iTable = addr / 1024;
-		pTable1->entries[addr] = i | 7;
-		i += 0x1000;
-	};
-
-	PageTable* pLast = kmallocAligned<PageTable>();
-	memset(pLast, 0, sizeof(PageTable));
-	pageDirectory->entries[1023] = (PageTable*)((u32)pLast | 3);
-	pLast->entries[1023] = (u32)pageDirectory | 7;
-	pLast->entries[0] = (u32)pTable1 | 7;
+	PageTable* tables = kmallocAligned<PageTable>(1024);
+	memset(tables, 0, sizeof(PageTable) * 1024);
+	for (u32 i = 0; i < 1023; i++) {
+		pageDirectory->entries[i] = (PageTable*)((u32)(&tables[i]) | 3);
+		for (u32 j = 0; j < 1024; j++) {
+			tables[i].entries[j] = (u32)(0x1000 * (1024 * i + j) | 7);
+		}
+		tables[1023].entries[i] = (u32)(&tables[i]) | 7;
+	}
+	pageDirectory->entries[1023] = (PageTable*)((u32)(&tables[1023]) | 3);
+	tables[1023].entries[1023] = (u32)pageDirectory | 7;
 
 	ISR::registerInterruptHandler(14, Memory::pageFault);
 
@@ -67,6 +78,10 @@ void Memory::init() {
 	asm volatile("mov %%cr0, %0" : "=r"(cr0));
 	cr0 |= 0x80000000;
 	asm volatile("mov %0, %%cr0" :: "r"(cr0));
+
+	Heap::init((void*)allocPointer, bytes - allocPointer - (0x1000 * 1024));
+
+	heapExists = true;
 }
 
 void Memory::pageFault(Registers regs) {

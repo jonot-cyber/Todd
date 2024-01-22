@@ -3,7 +3,7 @@
 #include "idt.h"
 
 namespace Memory {
-	void init();
+	void init(u32 bytes);
 
 	void* kmalloc(u32);
 	void* kmallocAligned(u32);
@@ -12,6 +12,7 @@ namespace Memory {
 	void kfree(void*);
 
 	void pageFault(Registers);
+	u32 virtualToPhysical(u32);
 
 	template <typename T>
 	T* kmalloc(u32 count = 1) {
