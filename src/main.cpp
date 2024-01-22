@@ -1,3 +1,4 @@
+#include "cmos.h"
 #include "gdt.h"
 #include "idt.h"
 #include "keyboard.h"
@@ -97,7 +98,6 @@ void outputToken(Lisp::Token const& token) {
 #include "parser.h"
 #include "exe.h"
 #include "lexer.h"
-#include "heap.h"
 
 static i8 buf[256];
 
@@ -110,6 +110,7 @@ extern "C" {
 		asm volatile("sti");
 		Timer::init(1000);
 		Memory::init(mboot->memUpper * 1024);
+		Monitor::printf("Date: %d-%d-%d\nTime: %d:%d:%d\n", (u32)CMOS::year(), (u32)CMOS::month(), (u32)CMOS::day(), (u32)CMOS::hours(), (u32)CMOS::minutes(), (u32)CMOS::seconds());
 		Keyboard::init();
 
 		Lisp::EAST::Scope scope;

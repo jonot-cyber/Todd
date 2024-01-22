@@ -2,6 +2,7 @@ subdir('lisp')
 
 sources = [
 	'boot.s',
+        'cmos.cpp',
 	'common.cpp',
 	'gdt.s',
 	'gdt.cpp',
