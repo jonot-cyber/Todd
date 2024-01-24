@@ -1,12 +1,13 @@
-#pragma once
+#ifndef CMOS_H
+#define CMOS_H
 
 #include "common.h"
 
-namespace CMOS {
-	u8 seconds();
-	u8 minutes();
-	u8 hours();
-	u8 day();
-	u8 month();
-	u16 year();
-};
+u8 cmos_seconds();
+u8 cmos_minutes();
+u8 cmos_hours();
+u8 cmos_days();
+u8 cmos_months();
+u16 cmos_years();
+
+#endif

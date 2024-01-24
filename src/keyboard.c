@@ -5,7 +5,7 @@
 const i8 LSHIFT_CODE = 'F';
 const i8 RSHIFT_CODE = 'G';
 
-const i8 scanSet[256] = {
+const i8 SCAN_SET[256] = {
 	'\0',
 	'A',
 	'1',
@@ -94,63 +94,63 @@ const i8 scanSet[256] = {
 	'Y',
 };
 
-static bool keys[256]{};
-static bool isScanning = false;
+static bool keys[256];
+static bool is_scanning = false;
 
-bool Keyboard::enableScanning() {
-	if (isScanning) {
+bool keyboard_enable_scanning() {
+	if (is_scanning) {
 		return false;
 	}
-	isScanning = true;
-	PS2::out(0xF4);
-	return 0xFA == PS2::in();
+	is_scanning = true;
+	ps2_out(0xF4);
+	return 0xFA == ps2_in();
 }
 
-bool Keyboard::disableScanning() {
-	if (!isScanning) {
+bool keyboard_disable_scanning() {
+	if (!is_scanning) {
 		return false;
 	}
-	isScanning = false;
-	PS2::out(0xF5);
-	return 0xFA == PS2::in();
+	is_scanning = false;
+	ps2_out(0xF5);
+	return 0xFA == ps2_in();
 }
 
-void Keyboard::init() {
-	disableScanning();
-	for (bool& key : keys) {
-		key = false;
+void keyboard_init() {
+	keyboard_disable_scanning();
+	for (u32 i = 0; i < 256; i++) {
+		keys[i] = false;
 	}
 }
 
-bool Keyboard::setLed(LEDState state) {
-	disableScanning();
-	PS2::out(0xED);
-	PS2::out(static_cast<u8>(state));
-	return PS2::in() == 0xFA;
+bool keyboard_set_led(enum KeyboardLED state) {
+	keyboard_disable_scanning();
+	ps2_out(0xED);
+	ps2_out((u8)state);
+	return ps2_in() == 0xFA;
 }
 
-bool Keyboard::echo() {
-	disableScanning();
-	PS2::out(0xEE);
-	return PS2::in() == 0xEE;
+bool keyboard_echo() {
+	keyboard_disable_scanning();
+	ps2_out(0xEE);
+	return ps2_in() == 0xEE;
 }
 
-void Keyboard::setScanCodeSet(i8 code) {
-	disableScanning();
-	PS2::out(0xF0);
-	PS2::out(code);	
+void keyboard_set_scancode_set(i8 code) {
+	keyboard_disable_scanning();
+	ps2_out(0xF0);
+	ps2_out(code);	
 	return;      
 }
 
-i8 Keyboard::getScanCodeSet() {
-	disableScanning();
-	PS2::out(0xF0);
-	PS2::out(0);
-	u8 ret = PS2::in();
+i8 keyboard_get_scancode_set() {
+	keyboard_disable_scanning();
+	ps2_out(0xF0);
+	ps2_out(0);
+	u8 ret = ps2_in();
 	if (ret != 0xFA) {
 		return -1;
 	}
-	switch (PS2::in()) {
+	switch (ps2_in()) {
         case 0x43:
 		return 1;
         case 0x41:
@@ -162,38 +162,30 @@ i8 Keyboard::getScanCodeSet() {
 	}
 }
 
-void Keyboard::setKey(u8 key, bool enabled) {
-	keys[key] = enabled;
-}
-
-bool Keyboard::keyPressed(u8 key) {
-	return keys[key];
-}
-
-i8 Keyboard::scan() {
-	enableScanning();
-	u8 ret = PS2::in();
+i8 keyboard_scan() {
+	keyboard_enable_scanning();
+	u8 ret = ps2_in();
 	if (ret >= 0x80) {
 		// Released
-		i8 k = scanSet[ret - 0x80];
-		if (!keyPressed(k)) {
+		i8 k = SCAN_SET[ret - 0x80];
+		if (!keys[k]) {
 			return '\0';
 		}
-		setKey(k, false);
+		keys[k] = false;
 		return -k;
 	} else {
-		i8 k = scanSet[ret];
-		if (keyPressed(k)) {
+		i8 k = SCAN_SET[ret];
+		if (keys[k]) {
 			return '\0';
 		}
-		setKey(k, true);
+		keys[k] = true;
 		return k;
 	}
 	return '\0';
 }
 
-i8 Keyboard::translateCode(i8 in) {
-	if (!(keyPressed(LSHIFT_CODE) || keyPressed(RSHIFT_CODE))) {
+i8 translate_code(i8 in) {
+	if (!(keys[LSHIFT_CODE] || keys[RSHIFT_CODE])) {
 		return in;
 	}
 	if (in >= 'a' && in <= 'z') {

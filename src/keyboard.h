@@ -1,75 +1,24 @@
-#pragma once
+#ifndef KEYBOARD_H
+#define KEYBOARD_H
 
 #include "common.h"
 
-namespace Keyboard {
-	/**
-	   Enum of LED states
-	*/
-	enum class LEDState : u8 {
-		ScrollLock = 1,
-		NumberLock = 2,
-		CapsLock = 4,
-	};
+enum KeyboardLED {
+	SCROLL_LOCK = 1,
+	NUMBER_LOCK = 2,
+	CAPS_LOCK = 4,
+};
 
-	/**
-	   Initialize the keyboard
-	 */
-	void init();
+void keyboard_init();
+bool keyboard_enable_scanning();
+bool keyboard_disable_scanning();
+bool keyboard_set_led(enum KeyboardLED led);
+bool keyboard_echo();
+void keyboard_set_scancode_set(i8 code);
+i8 keyboard_get_scancode_set();
+i8 keyboard_scan();
+bool key_pressed(u8 key);
+void set_key(u8 key, bool enabled);
+i8 translate_code(i8 in);
 
-	/**
-	   Enable scanning keys
-	 */
-	bool enableScanning();
-
-	/**
-	   Disable scanning keys
-	 */
-	bool disableScanning();
-
-	/**
-	   Set the states of the LEDs
-
-	   @param state is the state.
-	 */
-	bool setLed(LEDState state);
-
-	/**
-	   Make sure that the keyboard is working nice :)
-	 */
-	bool echo();
-
-	/**
-	   Set the scan code set
-
-	   @param code is the scan code set #
-	 */
-	void setScanCodeSet(i8 code);
-
-	/**
-	   Get the scan code set
-	 */
-	i8 getScanCodeSet();
-
-	/**
-	   Scan from the keyboard
-	 */
-	i8 scan();
-
-	/**
-	   Check if a key is currently pressed
-
-	   @param key is the key to check
-	 */
-	bool keyPressed(u8 key);
-
-	/**
-	   Set if a key is pressed
-
-	   @param key is the key to set
-	   @param enabled is whether it should be enabled
-	 */
-	void setKey(u8 key, bool enabled);
-
-	i8 translateCode(i8 in);
-}
+#endif

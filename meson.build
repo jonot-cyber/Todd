@@ -1,4 +1,4 @@
-project('Todd', 'cpp')
+project('Todd', 'c')
 
 subdir('src')
 

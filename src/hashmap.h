@@ -1,4 +1,5 @@
-#pragma once
+#ifndef HASHMAP_H
+#define HASHMAP_H
 
 #include "common.h"
 #include "memory.h"
@@ -61,7 +62,7 @@ namespace Types {
 		void postInsert() {
 			nEntries++;
 			if (nEntries > nBuckets * 2) { // Resize table
-				Monitor::printf("Resizing table to %d buckets\n", nBuckets * 2);
+				printf("Resizing table to %d buckets\n", nBuckets * 2);
 				HashMapPair<K, V>** tmp = buckets;
 				u32 tmpBuckets = nBuckets;
 				nEntries = 0;
@@ -116,7 +117,7 @@ namespace Types {
 			HashMapPair<K, V>** tmp = buckets;
 			u32 tmpBuckets = nBuckets;
 			nBuckets /= 2;
-			Monitor::printf("Resizing the table to %d buckets\n", nBuckets);
+			printf("Resizing the table to %d buckets\n", nBuckets);
 			nEntries = 0;
 			buckets = Memory::kmalloc<HashMapPair<K, V>*>(nBuckets);
 			for (u32 i = 0; i < tmpBuckets; i++) {
@@ -168,3 +169,5 @@ namespace Types {
 		}
 	};
 };
+
+#endif

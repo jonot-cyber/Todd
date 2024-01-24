@@ -1,56 +1,54 @@
-#pragma once
+#ifndef EXE_H
+#define EXE_H
 
 #include "parser.h"
 
-namespace Lisp {
-	namespace EAST {
-		enum Type {
-			PAIR,
-			QUOTE_PAIR,
-			SYMBOL,
-			QUOTE_SYMBOL,
-			INT,
-			PATH,
-			STRING
-		};
+enum ASTType {
+	AST_PAIR,
+	AST_QUOTE_PAIR,
+	AST_SYMBOL,
+	AST_QUOTE_SYMBOL,
+	AST_INT,
+	AST_PATH,
+	AST_STRING
+};
 
-		struct Node {
-			Type type;
-			union {
-				struct {
-					Node* p1;
-					Node* p2;
-				} pair;
-				struct {
-					const i8* start;
-					u32 size;
-				} span;
-				u32 num;
-			} data;
-		};
+struct ASTNode {
+	enum ASTType type;
+	union {
+		struct {
+			struct ASTNode* p1;
+			struct ASTNode* p2;
+		} pair;
+		struct {
+			const i8* start;
+			u32 size;
+		} span;
+		u32 num;
+	} data;
+};
 
-		struct Scope {
-			struct Entry {
-				i8* name;
-				Node* node;
-				u32 level;
-			};
+struct ScopeEntry {
+	i8* name;
+	struct ASTNode* node;
+	u32 level;
+};
 
-			u32 level;
-			u32 used;
-			Entry* data;
+struct Scope {
+	u32 level;
+	u32 used;
+	struct ScopeEntry* data;
+};
 
-			void init();
-			void add(i8 const* name, Node* node);
-			void del(i8 const* name);
-			void delIdx(u32 i);
-			void in();
-			void out();
-			Node* lookup(i8 const* name);
-			void exec(AST::ListContents* contents);
-		};
-	};
-	
-	void exe(AST::ListContents* contents);
-	EAST::Node* execNode(EAST::Node*, EAST::Scope*);
-}
+void scope_init(struct Scope*);
+void scope_add(struct Scope*, i8 const*, struct ASTNode*);
+void scope_del(struct Scope*, i8 const*);
+void scope_del_index(struct Scope*, u32);
+void scope_in(struct Scope*);
+void scope_out(struct Scope*);
+struct ASTNode* scope_lookup(struct Scope*, i8 const*);
+void scope_exec(struct Scope*, struct ParserListContents*);
+
+struct ASTNode* exec_node(struct Scope*, struct ASTNode*);
+
+#endif

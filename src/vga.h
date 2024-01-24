@@ -1,23 +1,24 @@
-#pragma once
-
-#include "common.h"
+#ifndef VGA_H
+#define VGA_H
 
 /* Values for VGA colors */
-enum class VGAColor: u8 {
-    Black,
-    Blue,
-    Green,
-    Cyan,
-    Red,
-    Magenta,
-    Brown,
-    LightGrey,
-    DarkGrey,
-    LightBlue,
-    LightGreen,
-    LightCyan,
-    LightRed,
-    LightMagenta,
-    LightBrown,
-    White,
+enum VGAColor {
+	BLACK,
+	BLUE,
+	GREEN,
+	CYAN,
+	RED,
+	MAGENTA,
+	BROWN,
+	LIGHT_GRAY,
+	DARK_GRAY,
+	LIGHT_BLUE,
+	LIGHT_GREEN,
+	LIGHT_CYAN,
+	LIGHT_RED,
+	LIGHT_MAGENTA,
+	LIGHT_BROWN,
+	WHITE,
 };
+
+#endif

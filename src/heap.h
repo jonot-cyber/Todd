@@ -1,22 +1,20 @@
-#pragma once
+#ifndef HEAP_H
+#define HEAP_H
 
 #include "common.h"
 
-namespace Heap {
-	struct Header {
-		u32 size;
-		bool isHole;
-		bool isLast;
-
-		bool mergeLeft();
-		bool mergeRight();
-	};
-
-	struct Footer {
-		Header* header;
-	};
-
-	void init(void* startAddr, u32 initSize);
-	void* malloc(u32 size);
-	void free(void* ptr);
+struct HeapHeader {
+	u32 size;
+	bool is_hole;
+	bool is_last;
 };
+
+struct HeapFooter {
+	struct HeapHeader* header;
+};
+
+void heap_init(void*,u32);
+void* heap_malloc(u32);
+void heap_free(void*);
+
+#endif

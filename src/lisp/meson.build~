@@ -1,7 +1,0 @@
-lisp_sources = [
-  'exe.cpp',
-  'lexer.cpp',
-  'parser.cpp',
-]
-
-lisp_dep = declare_dependency(sources: lisp_sources, include_directories: '.')
