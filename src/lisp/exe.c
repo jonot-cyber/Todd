@@ -308,21 +308,11 @@ void scope_out(struct Scope* scope) {
 }
 
 struct ScopeEntry* scope_lookup(struct Scope* scope, i8 const* name) {
-	bool found = false;
-	u32 nearestIdx = 0;
-	u32 nearestLevel = 0;
-	for (u32 i = 0; i < scope->used; i++) {
+	for (u32 i = scope->used - 1; i < scope->used; i--) {
 		if (strcmp(name, scope->data[i].name) != 0) {
 			continue;
 		}
-		if (!found || scope->data[i].level > nearestLevel) {
-			nearestLevel = scope->data[i].level;
-			nearestIdx = i;
-		}
-		found = true;
+		return &scope->data[i];
 	}
-	if (!found) {
-		return NULL;
-	}
-	return &scope->data[nearestIdx];
+	return NULL;
 }
