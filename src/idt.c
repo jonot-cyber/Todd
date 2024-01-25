@@ -120,6 +120,7 @@ void isrHandler(struct Registers registers) {
 		write_char('=');
 	}
 	write_char('\n');
+	halt();
 }
 
 /**

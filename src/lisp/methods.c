@@ -73,11 +73,11 @@ struct ASTNode* method_div(struct ASTNode* n, struct Scope* scope) {
 struct ASTNode* method_if(struct ASTNode* n, struct Scope* scope) {
 	struct ASTNode* condition = n->data.pair.p1;
 	struct ASTNode* ifTrue = n->data.pair.p2->data.pair.p1;
-	struct ASTNode* ifFalse = n->data.pair.p2->data.pair.p2;
+	struct ASTNode* ifFalse = n->data.pair.p2->data.pair.p2->data.pair.p1;
 
 	struct ASTNode* conditionRes = exec_node(scope, condition);
 	assert(conditionRes->type == AST_SYMBOL, "methods_if: Not a boolean");
-	if (strcmp_span("#t", conditionRes->data.span.start, conditionRes->data.span.size) == 0) {
+	if (strcmp("#t", conditionRes->data.span) == 0) {
 		return exec_node(scope, ifTrue);
 	} else {
 		return exec_node(scope, ifFalse);
@@ -91,16 +91,16 @@ struct ASTNode* method_eq(struct ASTNode* n, struct Scope* scope) {
 	p1 = exec_node(scope, p1);
 	p2 = exec_node(scope, p2);
 
-	// TODO: Implement non ints
-	assert(p1->type == p2->type && p1->type == AST_INT,
-	       "methods_eq: Can only compare ints at the moment");
 	struct ASTNode* ret = kmalloc(sizeof(struct ASTNode));
 	ret->type = AST_SYMBOL;
-	ret->data.span.size = 2;
+	if (p1->type != p2->type) {
+		ret->data.span = FALSE_SYMBOL;
+		return ret;
+	}
 	if (p1->data.num == p2->data.num) {
-		ret->data.span.start = TRUE_SYMBOL;
+		ret->data.span = TRUE_SYMBOL;
 	} else {
-		ret->data.span.start = FALSE_SYMBOL;
+		ret->data.span = FALSE_SYMBOL;
 	}
 	return ret;
 }
@@ -109,14 +109,33 @@ struct ASTNode* method_define(struct ASTNode* n, struct Scope* scope) {
 	struct ASTNode* p1 = n->data.pair.p1;
 	struct ASTNode* p2 = n->data.pair.p2->data.pair.p1;
 
-	// TODO: Functions
-	assert(p1->type == AST_SYMBOL, "methods_define: Can only define a symbol as a name");
-
-	struct ASTNode* ret = exec_node(scope, p2);
-	i8* buf = kmalloc(p1->data.span.size * sizeof(i8));
-	memcpy(p1->data.span.start, buf, p1->data.span.size);
-	buf[p1->data.span.size] = '\0';
-	scope_add(scope, buf, ret);
-	kfree(buf);
-	return ret;
+	if (p1->type == AST_SYMBOL) {
+		struct ASTNode* ret = exec_node(scope, p2);
+		u32 len = strlen(p1->data.span);
+		i8* buf = kmalloc(len);
+		memcpy(p1->data.span, buf, len);
+		buf[len] = '\0';
+		scope_add(scope, buf, ret);
+		kfree(buf);
+		return ret;
+	} else if (p1->type == AST_PAIR) {
+		struct ASTNode* name = p1->data.pair.p1;
+		struct ASTNode* params = p1->data.pair.p2;
+		assert(name->type == AST_SYMBOL, "methods_define: Function name must be a symbol");
+		u32 name_len = strlen(name->data.span);
+		i8* buf = kmalloc(name_len + 1);
+		memcpy(name->data.span, buf, name_len);
+		buf[name_len] = '\0';
+		struct ScopeEntry* new_entry = kmalloc(sizeof(struct ScopeEntry));
+		new_entry->name = buf;
+		new_entry->method = NULL;
+		new_entry->node = p2;
+		new_entry->params = params;
+		scope_add_entry(scope, new_entry);
+		kfree(new_entry);
+		return NULL;
+	} else {
+		assert(false, "methods_define: Incorrect syntax for define");
+		return NULL;
+	}
 }

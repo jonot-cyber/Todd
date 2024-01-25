@@ -62,9 +62,11 @@ struct ASTNode* convertValue(struct ParserValue* v) {
 	case P_SYMBOL:
 	{
 		struct ParserSpan* span = v->data;
+		i8* buf = kmalloc(span->end - span->start + 1);
+		memcpy(span->start, buf, span->end - span->start);
+		buf[span->end - span->start] = '\0';
 		ret->type = AST_SYMBOL;
-		ret->data.span.start = span->start;
-		ret->data.span.size = span->end - span->start;
+		ret->data.span = buf;
 		break;
 	}
 	default:
@@ -86,24 +88,34 @@ struct ASTNode* convertList(struct ParserListContents* list) {
 	return ret;
 }
 
+void output(struct ASTNode*);
+
 struct ASTNode* execFunction(struct ASTNode* n, struct Scope* scope) {
 	struct ASTNode* symbol = n->data.pair.p1;
 	struct ASTNode* args = n->data.pair.p2;
-	if (strcmp_span("+", symbol->data.span.start, symbol->data.span.size) == 0) {
-		return method_add(args, scope);
-	} else if (strcmp_span("-", symbol->data.span.start, symbol->data.span.size) == 0) {
-		return method_sub(args, scope);
-	} else if (strcmp_span("*", symbol->data.span.start, symbol->data.span.size) == 0) {
-		return method_mul(args, scope);
-	} else if (strcmp_span("/", symbol->data.span.start, symbol->data.span.size) == 0) {
-		return method_div(args, scope);
-	} else if (strcmp_span("if", symbol->data.span.start, symbol->data.span.size) == 0) {
-		return method_if(args, scope);
-	} else if (strcmp_span("=", symbol->data.span.start, symbol->data.span.size) == 0) {
-		return method_eq(args, scope);
-	} else if (strcmp_span("define", symbol->data.span.start, symbol->data.span.size) == 0) {
-		return method_define(args, scope);
+	struct ScopeEntry* entry = scope_lookup(scope, symbol->data.span);
+	assert(entry != NULL, "execFunction: Function not found");
+	if (entry->method) {
+		// Builtin method
+		struct ASTNode* ret = entry->method(args, scope);
+		return entry->method(args, scope);
+	} else if (entry->params) {
+		scope_in(scope);
+		struct ASTNode* param_ptr = entry->params;
+		struct ASTNode* arg_ptr = args;
+		while (param_ptr) {
+			struct ASTNode* param = param_ptr->data.pair.p1;
+			assert(param->type == AST_SYMBOL, "execFunction: Parameter name isn't a symbol");
+			struct ASTNode* arg_result = exec_node(scope, arg_ptr->data.pair.p1);
+			scope_add(scope, param->data.span, arg_result);
+			param_ptr = param_ptr->data.pair.p2;
+			arg_ptr = arg_ptr->data.pair.p2;
+		}
+		struct ASTNode* ret = exec_node(scope, entry->node);
+		scope_out(scope);
+		return ret;
 	}
+	assert(false, "execFunction: Not a method");
 	return NULL;
 }
 
@@ -121,18 +133,18 @@ struct ASTNode* exec_node(struct Scope* scope, struct ASTNode* n) {
 		return execFunction(n, scope);
 	case AST_SYMBOL:
 	{
-		if (strcmp_span("#t", n->data.span.start, n->data.span.size) == 0) {
+		if (strcmp("#t", n->data.span) == 0) {
 			return n;
-		} else if (strcmp_span("#f", n->data.span.start, n->data.span.size) == 0) {
+		} else if (strcmp("#f", n->data.span) == 0) {
 			return n;
 		}
-		i8* nameBuf = kmalloc(n->data.span.size + 1);
-		memcpy(n->data.span.start, nameBuf, n->data.span.size);
-		nameBuf[n->data.span.size] = '\0';
-		struct ASTNode* r = scope_lookup(scope, nameBuf);
-		assert(r != NULL, "Lisp::execNode: unknown symbol");
-		kfree(nameBuf);
-		return r;
+		struct ScopeEntry* r = scope_lookup(scope, n->data.span);
+		assert(r != NULL, "exec_node: unknown symbol");
+		if (r->method != NULL || r->params != NULL) {
+			// Just return methods directly;
+			return n;
+		}
+		return exec_node(scope, r->node);
 		break;
 	}
 	default:
@@ -168,30 +180,18 @@ void output(struct ASTNode* n) {
 	case AST_PATH:
 	case AST_SYMBOL:
 	{
-		i8* buf = kmalloc(n->data.span.size + 1);
-		memcpy(n->data.span.start, buf, n->data.span.size);
-		buf[n->data.span.size] = '\0';
-		write_string(buf);
-		kfree(buf);
+		write_string(n->data.span);
 		break;
 	}
 	case AST_QUOTE_SYMBOL:
 	{
 		write_char('\'');
-		i8* buf = kmalloc(n->data.span.size + 1);
-		memcpy(n->data.span.start, buf, n->data.span.size);
-		buf[n->data.span.size] = '\0';
-		write_string(buf);
-		kfree(buf);
+		write_string(n->data.span);
 		break;
 	}
 	case AST_STRING:
 	{
-		i8* buf = kmalloc(n->data.span.size + 1);
-		memcpy(n->data.span.start, buf, n->data.span.size);
-		buf[n->data.span.size] = '\0';
-		printf("\"%s\"", buf);
-		kfree(buf);
+		printf("\"%s\"", n->data.span);
 		break;
 	}
 	default:
@@ -216,6 +216,31 @@ void scope_init(struct Scope* scope) {
 	scope->used = 0;
 
 	scope->data = kmalloc(sizeof(struct ScopeEntry) * 256);
+
+	struct ScopeEntry* tmp = kmalloc(sizeof(struct ScopeEntry));
+	memset(tmp, 0, sizeof(struct ScopeEntry));
+	tmp->name = "+";
+	tmp->method = method_add;
+	scope_add_entry(scope, tmp);
+	tmp->name = "-";
+	tmp->method = method_sub;
+	scope_add_entry(scope, tmp);
+	tmp->name = "*";
+	tmp->method = method_mul;
+	scope_add_entry(scope, tmp);
+	tmp->name = "/";
+	tmp->method = method_div;
+	scope_add_entry(scope, tmp);
+	tmp->name = "=";
+	tmp->method = method_eq;
+	scope_add_entry(scope, tmp);
+	tmp->name = "if";
+	tmp->method = method_if;
+	scope_add_entry(scope, tmp);
+	tmp->name = "define";
+	tmp->method = method_define;
+	scope_add_entry(scope, tmp);
+	kfree(tmp);
 }
 
 void scope_add(struct Scope* scope, i8 const* name, struct ASTNode* node) {
@@ -223,18 +248,25 @@ void scope_add(struct Scope* scope, i8 const* name, struct ASTNode* node) {
 		// TODO: Grow scope
 		return;
 	}
+	struct ScopeEntry* entry = kmalloc(sizeof(struct ScopeEntry));
 	i8* buf = kmalloc(strlen(name) + 1);
 	memcpy(name, buf, strlen(name));
 	buf[strlen(name)] = '\0';
-	for (u32 i = 0; i < scope->used; i++) {
-		if (scope->data[i].level == scope->level && strcmp(buf, scope->data[i].name) == 0) {
-			scope->data[i].node = node;
-			return;
-		}
-	}
-	scope->data[scope->used].name = buf;
-	scope->data[scope->used].node = node;
+	entry->name = buf;
+	entry->method = NULL;
+	entry->node = node;
+	entry->params = NULL;
+	scope_add_entry(scope, entry);
+	kfree(entry);
+	return;
+}
+
+void scope_add_entry(struct Scope* scope, struct ScopeEntry* entry) {
+	assert(scope->used != 256, "scope_add_entry: BUFFER FULL!");
+	memset(&scope->data[scope->used], 0, sizeof(struct ScopeEntry));
+	memcpy(entry, &scope->data[scope->used], sizeof(struct ScopeEntry));
 	scope->data[scope->used].level = scope->level;
+
 	scope->used++;
 	return;
 }
@@ -261,6 +293,7 @@ void scope_del(struct Scope* scope, i8 const* name) {
 }
 
 void scope_in(struct Scope* scope) {
+	assert(scope->level < 64, "scope_in: check on that recursion");
 	scope->level++;
 }
 
@@ -274,7 +307,7 @@ void scope_out(struct Scope* scope) {
 	scope->level--;
 }
 
-struct ASTNode* scope_lookup(struct Scope* scope, i8 const* name) {
+struct ScopeEntry* scope_lookup(struct Scope* scope, i8 const* name) {
 	bool found = false;
 	u32 nearestIdx = 0;
 	u32 nearestLevel = 0;
@@ -291,5 +324,5 @@ struct ASTNode* scope_lookup(struct Scope* scope, i8 const* name) {
 	if (!found) {
 		return NULL;
 	}
-	return scope->data[nearestIdx].node;
+	return &scope->data[nearestIdx];
 }
