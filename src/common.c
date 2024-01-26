@@ -15,10 +15,15 @@ void assert(bool condition, const i8* message) {
 	halt();
 }
 
-
 void memset(void* start, u8 value, u32 size) {
-	assert(start != NULL, "memset: Trying to write to nullptr");
-	for (u32 i = 0; i < size; i++) {
+	u32 size_div4 = size >> 2;
+	u32 fill_with = value;
+	fill_with += fill_with << 8;
+	fill_with += fill_with << 16;
+	for (u32 i = 0; i < size_div4; i++) {
+		*((u32*)start+i) = fill_with;
+	}
+	for (u32 i = (size | 3) - 3; i < size; i++) {
 		*((u8*)start+i) = value;
 	}
 }

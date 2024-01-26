@@ -56,6 +56,25 @@ void multiboot_info(struct MultiBoot* mboot) {
 
 static i8 buf[256];
 
+void memset_test() {
+	// Allocate a 1MB buffer
+	i8* buf = kmalloc(1024 * 1024);
+	printf("Filling buffer:\n");
+	for (u32 i = 0; i < 1024 * 1024; i++) {
+		u8 c = i & 0xFF;
+		buf[i] = *(i8*)&c;
+	}
+	printf("Buffer filled\n");
+	u32 start_time = ticks;
+	for (u32 i = 0; i < 256; i++) {
+		memset(buf, i & 0xFF, 1024 * 1024);
+	}
+	u32 end_time = ticks;
+	printf("Finished memset() in %d ms\n", end_time - start_time);
+	kfree(buf);
+	halt();
+}
+
 #include "scope.h"
 int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	initial_esp = initialStack;
@@ -88,7 +107,10 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 			bufI = 0;
 			const i8* toParse = buf;
 			struct ParserListContents* lc = parse(&toParse);
+			u32 start_time = ticks;
 			scope_exec(&scope, lc);
+			u32 end_time = ticks;
+			printf("%d ms\n", end_time - start_time);
 			memset(buf, 0, 256);
 			write_string("=> ");
 		} else if (translated == '\n') {

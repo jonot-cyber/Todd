@@ -1,3 +1,6 @@
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+
 #include "scope.h"
 
 #include "memory.h"
@@ -153,3 +156,5 @@ struct ScopeEntry* scope_lookup(struct Scope* scope, i8 const* name) {
 	}
 	return ptr;
 }
+
+#pragma GCC pop_options

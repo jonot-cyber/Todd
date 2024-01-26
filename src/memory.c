@@ -1,3 +1,5 @@
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 #include "memory.h"
 
 #include "heap.h"
@@ -28,7 +30,8 @@ void* kmallocInternal(u32 size, bool align, u32* physical) {
 }
 
 void* kmalloc(u32 size) {
-	return kmallocInternal(size, false, NULL);
+	void* ret = kmallocInternal(size, false, NULL);
+	return ret;
 }
 
 void* kmalloc_z(u32 size) {
@@ -96,3 +99,5 @@ void page_fault(struct Registers regs) {
 	printf("PAGE FAULT: 0x%x", address);
 	halt();
 }
+
+#pragma GCC pop_options
