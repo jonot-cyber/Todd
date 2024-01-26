@@ -67,8 +67,8 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	memory_init(mboot->mem_upper * 1024);
 	keyboard_init();
 
-	struct Scope2 scope;
-	scope2_init(&scope);
+	struct Scope scope;
+	scope_init(&scope);
 
 	memset(buf, 0, 256);
 	u32 bufI = 0;
@@ -89,7 +89,7 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 			bufI = 0;
 			const i8* toParse = buf;
 			struct ParserListContents* lc = parse(&toParse);
-			scope2_exec(&scope, lc);
+			scope_exec(&scope, lc);
 			memset(buf, 0, 256);
 			write_string("=> ");
 		} else if (translated == '\n') {

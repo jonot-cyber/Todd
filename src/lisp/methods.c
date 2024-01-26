@@ -8,7 +8,7 @@
 const i8* TRUE_SYMBOL = "#t";
 const i8* FALSE_SYMBOL = "#f";
 
-struct ASTNode* method_add(struct ASTNode* n, struct Scope2* scope) {
+struct ASTNode* method_add(struct ASTNode* n, struct Scope* scope) {
 	struct ASTNode* ret = kmalloc(sizeof(struct ASTNode));
 	ret->type = AST_INT;
 	ret->data.num = 0;
@@ -22,7 +22,7 @@ struct ASTNode* method_add(struct ASTNode* n, struct Scope2* scope) {
 }
 
 
-struct ASTNode* method_sub(struct ASTNode* n, struct Scope2* scope) {
+struct ASTNode* method_sub(struct ASTNode* n, struct Scope* scope) {
 	bool first = true;
 	struct ASTNode* ret = kmalloc(sizeof(struct ASTNode));
 	ret->type = AST_INT;
@@ -40,7 +40,7 @@ struct ASTNode* method_sub(struct ASTNode* n, struct Scope2* scope) {
 	return ret;
 }
 
-struct ASTNode* method_mul(struct ASTNode* n, struct Scope2* scope) {
+struct ASTNode* method_mul(struct ASTNode* n, struct Scope* scope) {
 	struct ASTNode* ret = kmalloc(sizeof(struct ASTNode));
 	ret->type = AST_INT;
 	ret->data.num = 1;
@@ -53,7 +53,7 @@ struct ASTNode* method_mul(struct ASTNode* n, struct Scope2* scope) {
 	return ret;
 }
 
-struct ASTNode* method_div(struct ASTNode* n, struct Scope2* scope) {
+struct ASTNode* method_div(struct ASTNode* n, struct Scope* scope) {
 	bool first = true;
 	struct ASTNode* ret = kmalloc(sizeof(struct ASTNode));
 	ret->type = AST_INT;
@@ -71,7 +71,7 @@ struct ASTNode* method_div(struct ASTNode* n, struct Scope2* scope) {
 	return ret;
 }
 
-struct ASTNode* method_if(struct ASTNode* n, struct Scope2* scope) {
+struct ASTNode* method_if(struct ASTNode* n, struct Scope* scope) {
 	struct ASTNode* condition = n->data.pair.p1;
 	struct ASTNode* ifTrue = n->data.pair.p2->data.pair.p1;
 	struct ASTNode* ifFalse = n->data.pair.p2->data.pair.p2->data.pair.p1;
@@ -86,7 +86,7 @@ struct ASTNode* method_if(struct ASTNode* n, struct Scope2* scope) {
 }
 
 
-struct ASTNode* method_eq(struct ASTNode* n, struct Scope2* scope) {
+struct ASTNode* method_eq(struct ASTNode* n, struct Scope* scope) {
 	struct ASTNode* p1 = n->data.pair.p1;
 	struct ASTNode* p2 = n->data.pair.p2->data.pair.p1;
 	p1 = exec_node(scope, p1);
@@ -106,7 +106,7 @@ struct ASTNode* method_eq(struct ASTNode* n, struct Scope2* scope) {
 	return ret;
 }
 
-struct ASTNode* method_define(struct ASTNode* n, struct Scope2* scope) {
+struct ASTNode* method_define(struct ASTNode* n, struct Scope* scope) {
 	struct ASTNode* p1 = n->data.pair.p1;
 	struct ASTNode* p2 = n->data.pair.p2->data.pair.p1;
 
@@ -116,14 +116,14 @@ struct ASTNode* method_define(struct ASTNode* n, struct Scope2* scope) {
 		i8* buf = kmalloc(len);
 		memcpy(p1->data.span, buf, len);
 		buf[len] = '\0';
-		struct ScopeEntry2* new_entry = kmalloc(sizeof(struct ScopeEntry2));
+		struct ScopeEntry* new_entry = kmalloc(sizeof(struct ScopeEntry));
 		new_entry->level = 0;
 		new_entry->method = NULL;
 		new_entry->name = buf;
 		new_entry->next = NULL;
 		new_entry->node = ret;
 		new_entry->params = NULL;
-		scope2_add(scope, new_entry);
+		scope_add(scope, new_entry);
 		return ret;
 	} else if (p1->type == AST_PAIR) {
 		struct ASTNode* name = p1->data.pair.p1;
@@ -133,13 +133,13 @@ struct ASTNode* method_define(struct ASTNode* n, struct Scope2* scope) {
 		i8* buf = kmalloc(name_len + 1);
 		memcpy(name->data.span, buf, name_len);
 		buf[name_len] = '\0';
-		struct ScopeEntry2* new_entry = kmalloc(sizeof(struct ScopeEntry2));
+		struct ScopeEntry* new_entry = kmalloc(sizeof(struct ScopeEntry));
 		new_entry->name = buf;
 		new_entry->method = NULL;
 		new_entry->node = p2;
 		new_entry->params = params;
 		new_entry->next = NULL;
-		scope2_add(scope, new_entry);
+		scope_add(scope, new_entry);
 		kfree(new_entry);
 		return NULL;
 	} else {

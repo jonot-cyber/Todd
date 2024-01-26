@@ -26,8 +26,8 @@ struct ASTNode {
 	} data;
 };
 
-struct ASTNode* exec_node(struct Scope2*, struct ASTNode*);
+struct ASTNode* exec_node(struct Scope*, struct ASTNode*);
 
-void scope2_exec(struct Scope2*, struct ParserListContents*);
+void scope_exec(struct Scope*, struct ParserListContents*);
 
 #endif

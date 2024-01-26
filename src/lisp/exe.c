@@ -91,42 +91,41 @@ struct ASTNode* convertList(struct ParserListContents* list) {
 
 void output(struct ASTNode*);
 
-struct ASTNode* execFunction(struct ASTNode* n, struct Scope2* scope) {
+struct ASTNode* execFunction(struct ASTNode* n, struct Scope* scope) {
 	struct ASTNode* symbol = n->data.pair.p1;
 	struct ASTNode* args = n->data.pair.p2;
-	struct ScopeEntry2* entry = scope2_lookup(scope, symbol->data.span);
+	struct ScopeEntry* entry = scope_lookup(scope, symbol->data.span);
 	assert(entry != NULL, "execFunction: Function not found");
 	if (entry->method) {
 		// Builtin method
-		struct ASTNode* ret = entry->method(args, scope);
 		return entry->method(args, scope);
 	} else if (entry->params) {
-		scope2_in(scope);
+		scope_in(scope);
 		struct ASTNode* param_ptr = entry->params;
 		struct ASTNode* arg_ptr = args;
 		while (param_ptr) {
 			struct ASTNode* param = param_ptr->data.pair.p1;
 			assert(param->type == AST_SYMBOL, "execFunction: Parameter name isn't a symbol");
 			struct ASTNode* arg_result = exec_node(scope, arg_ptr->data.pair.p1);
-			struct ScopeEntry2* new_entry = kmalloc(sizeof(struct ScopeEntry2));
+			struct ScopeEntry* new_entry = kmalloc(sizeof(struct ScopeEntry));
 			new_entry->node = arg_result;
 			new_entry->method = NULL;
 			new_entry->params = NULL;
 			new_entry->level = 0;
 			new_entry->name = (i8*)param->data.span;
-			scope2_add(scope, new_entry);
+			scope_add(scope, new_entry);
 			param_ptr = param_ptr->data.pair.p2;
 			arg_ptr = arg_ptr->data.pair.p2;
 		}
 		struct ASTNode* ret = exec_node(scope, entry->node);
-		scope2_out(scope);
+		scope_out(scope);
 		return ret;
 	}
 	assert(false, "execFunction: Not a method");
 	return NULL;
 }
 
-struct ASTNode* exec_node(struct Scope2* scope, struct ASTNode* n) {
+struct ASTNode* exec_node(struct Scope* scope, struct ASTNode* n) {
 	if (n == NULL) {
 		return NULL;
 	}
@@ -145,7 +144,7 @@ struct ASTNode* exec_node(struct Scope2* scope, struct ASTNode* n) {
 		} else if (strcmp("#f", n->data.span) == 0) {
 			return n;
 		}
-		struct ScopeEntry2* r = scope2_lookup(scope, n->data.span);
+		struct ScopeEntry* r = scope_lookup(scope, n->data.span);
 		assert(r != NULL, "exec_node: unknown symbol");
 		if (r->method != NULL || r->params != NULL) {
 			// Just return methods directly;
@@ -207,7 +206,7 @@ void output(struct ASTNode* n) {
 	}
 }
 
-void scope2_exec(struct Scope2* scope, struct ParserListContents* l) {
+void scope_exec(struct Scope* scope, struct ParserListContents* l) {
 	struct ASTNode* c = convertList(l);
 	while (c) {
 		struct ASTNode* res = exec_node(scope, c->data.pair.p1);
