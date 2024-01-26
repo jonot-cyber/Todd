@@ -31,6 +31,12 @@ void* kmalloc(u32 size) {
 	return kmallocInternal(size, false, NULL);
 }
 
+void* kmalloc_z(u32 size) {
+	void* ret = kmalloc(size);
+	memset(ret, 0, size);
+	return ret;
+}
+
 void* kmallocAligned(u32 size) {
 	return kmallocInternal(size, true, NULL);
 }

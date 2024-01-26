@@ -22,8 +22,7 @@ u32 pjw_hash(u8* data, u32 len) {
 }
 
 void scope_init(struct Scope* scope) {
-	scope->data = kmalloc(SCOPE_TABLES * sizeof(struct ScopeEntry*));
-	memset(scope->data, 0, SCOPE_TABLES * sizeof(struct ScopeEntry*));
+	scope->data = kmalloc_z(SCOPE_TABLES * sizeof(struct ScopeEntry*));
 
 	struct ScopeEntry* tmp;
 	tmp->node = NULL;

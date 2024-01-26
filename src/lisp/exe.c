@@ -34,8 +34,7 @@ struct ASTNode* convertValue(struct ParserValue* v) {
 			node->type = AST_QUOTE_PAIR;
 			node->data.pair.p1 = convertValue(lc->v);
 			if (lc->n) {
-				node->data.pair.p2 = kmalloc(sizeof(struct ASTNode));
-				memset(node->data.pair.p2, 0, sizeof(struct ASTNode));
+				node->data.pair.p2 = kmalloc_z(sizeof(struct ASTNode));
 			}
 			node = node->data.pair.p2;
 			lc = lc->n;
