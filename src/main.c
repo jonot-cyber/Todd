@@ -1,4 +1,3 @@
-#include "cmos.h"
 #include "common.h"
 #include "gdt.h"
 #include "idt.h"

@@ -1,5 +1,4 @@
 #include "exe.h"
-#include "methods.h"
 #include "parser.h"
 
 #include "../memory.h"
@@ -70,6 +69,16 @@ struct ASTNode* convertValue(struct ParserValue* v) {
 		ret->data.span = buf;
 		break;
 	}
+	case P_STRING:
+	{
+		struct ParserSpan* span = v->data;
+		i8* buf = kmalloc(span->end - span->start - 1);
+		memcpy(span->start + 1, buf, span->end - span->start - 2);
+		buf[span->end - span->start - 2] = '\0';
+		ret->type = AST_STRING;
+		ret->data.span = buf;
+		break;
+	}
 	default:
 		printf("Unknown type: %d\n", (u32)v->t);
 		halt();
@@ -135,8 +144,11 @@ struct ASTNode* exec_node(struct Scope* scope, struct ASTNode* n) {
 	case AST_QUOTE_PAIR:
 		return n;
 	case AST_PAIR:
-		assert(n->data.pair.p1->type == AST_SYMBOL, "execNode: Not a function");
+	{
+		struct ASTNode* p1 = n->data.pair.p1;
+		assert(p1->type == AST_SYMBOL, "exec_node: Not a function");
 		return execFunction(n, scope);
+	}
 	case AST_SYMBOL:
 	{
 		if (strcmp("#t", n->data.span) == 0) {

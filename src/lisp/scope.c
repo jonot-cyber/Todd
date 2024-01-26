@@ -51,6 +51,18 @@ void scope_init(struct Scope* scope) {
 	tmp->method = method_define;
 	tmp->name = "define";
 	scope_add(scope, tmp);
+	tmp->method = method_display;
+	tmp->name = "display";
+	scope_add(scope, tmp);
+	tmp->method = method_and;
+	tmp->name = "and";
+	scope_add(scope, tmp);
+	tmp->method = method_or;
+	tmp->name = "or";
+	scope_add(scope, tmp);
+	tmp->method = method_not;
+	tmp->name = "not";
+	scope_add(scope, tmp);
 }
 
 void scope_add(struct Scope* scope, struct ScopeEntry* entry) {

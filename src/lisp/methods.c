@@ -1,7 +1,8 @@
 #include "methods.h"
 
-#include "memory.h"
 #include "exe.h"
+#include "memory.h"
+#include "monitor.h"
 #include "scope.h"
 #include "string.h"
 
@@ -147,3 +148,70 @@ struct ASTNode* method_define(struct ASTNode* n, struct Scope* scope) {
 		return NULL;
 	}
 }
+
+struct ASTNode* method_display(struct ASTNode* args, struct Scope* scope) {
+	assert(args->type == AST_PAIR, "method_display: weird arguments");
+	struct ASTNode* param = args->data.pair.p1;
+	assert(param->type == AST_STRING, "method_display: not a string");
+	printf("%s\n", param->data.span);
+	return NULL;
+}
+
+struct ASTNode* method_and(struct ASTNode* args, struct Scope* scope) {
+	assert(args->type == AST_PAIR, "method_and: weird arguments");
+	struct ASTNode* ptr = args;
+	while (ptr) {
+		struct ASTNode* arg = ptr->data.pair.p1;
+		arg = exec_node(scope, arg);
+		if (strcmp(arg->data.span, "#f") == 0) {
+			struct ASTNode* ret = kmalloc(sizeof(struct ASTNode));
+			ret->type = AST_SYMBOL;
+			ret->data.span = FALSE_SYMBOL;
+			return ret;
+		}
+		ptr = ptr->data.pair.p2;
+	}
+	struct ASTNode* ret = kmalloc(sizeof(struct ASTNode));
+	ret->type = AST_SYMBOL;
+	ret->data.span = TRUE_SYMBOL;
+	return ret;
+}
+
+struct ASTNode* method_or(struct ASTNode* args, struct Scope* scope) {
+	assert(args->type == AST_PAIR, "method_or: weird arguments");
+	struct ASTNode* ptr = args;
+	while (ptr) {
+		struct ASTNode* arg = ptr->data.pair.p1;
+		arg = exec_node(scope, arg);
+		if (strcmp(arg->data.span, "#t") == 0) {
+			struct ASTNode* ret = kmalloc(sizeof(struct ASTNode));
+			ret->type = AST_SYMBOL;
+			ret->data.span = TRUE_SYMBOL;
+			return ret;
+		}
+		ptr = ptr->data.pair.p2;
+	}
+	struct ASTNode* ret = kmalloc(sizeof(struct ASTNode));
+	ret->type = AST_SYMBOL;
+	ret->data.span = FALSE_SYMBOL;
+	return ret;
+}
+
+struct ASTNode* method_not(struct ASTNode* args, struct Scope* scope) {
+	assert(args->type == AST_PAIR, "method_not: weird arguments");
+	struct ASTNode* ptr = args;
+	struct ASTNode* arg = exec_node(scope, ptr->data.pair.p1);
+	struct ASTNode* ret = kmalloc(sizeof(struct ASTNode));
+	ret->type = AST_SYMBOL;
+	assert(arg->type == AST_SYMBOL, "method_not: Needs to be a boolean");
+	if (strcmp(arg->data.span, "#t") == 0) {
+		ret->data.span = FALSE_SYMBOL;
+	} else if (strcmp(arg->data.span, "#f") == 0) {
+		ret->data.span = TRUE_SYMBOL;
+	} else {
+		kfree(ret);
+		return NULL;
+	}
+	return ret;
+}
+
