@@ -89,10 +89,12 @@ void write_char(i8 c) {
 		cursorY++;
 		break;
         default:
+	{
 		u16* location = videoMemory + (cursorY * 80 + cursorX);
 		*location = color_character(c);
 		cursorX++;
 		break;
+	}
 	}
 	scroll();
 	move_cursor();

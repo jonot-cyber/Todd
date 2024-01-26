@@ -2,6 +2,7 @@
 #define EXE_H
 
 #include "parser.h"
+#include "scope.h"
 
 enum ASTType {
 	AST_PAIR,
@@ -25,32 +26,8 @@ struct ASTNode {
 	} data;
 };
 
-struct Scope;
+struct ASTNode* exec_node(struct Scope2*, struct ASTNode*);
 
-struct ScopeEntry {
-	i8* name;
-	struct ASTNode* (*method)(struct ASTNode*, struct Scope*);
-	struct ASTNode* node;
-	struct ASTNode* params;
-	u32 level;
-};
-
-struct Scope {
-	u32 level;
-	u32 used;
-	struct ScopeEntry* data;
-};
-
-void scope_init(struct Scope*);
-void scope_add(struct Scope*, i8 const*, struct ASTNode*);
-void scope_add_entry(struct Scope*, struct ScopeEntry*);
-void scope_del(struct Scope*, i8 const*);
-void scope_del_index(struct Scope*, u32);
-void scope_in(struct Scope*);
-void scope_out(struct Scope*);
-struct ScopeEntry* scope_lookup(struct Scope*, i8 const*);
-void scope_exec(struct Scope*, struct ParserListContents*);
-
-struct ASTNode* exec_node(struct Scope*, struct ASTNode*);
+void scope2_exec(struct Scope2*, struct ParserListContents*);
 
 #endif

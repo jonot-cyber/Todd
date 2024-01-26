@@ -1,9 +1,7 @@
 #include "gdt.h"
 
-// The GDT entries
 static struct GDTEntry entries[5];
 
-// The GDT pointer
 static struct GDTPointer ptr;
 
 void gdt_entry_set(struct GDTEntry* entry, u32 base, u32 limit, u8 a, u8 gran) {
@@ -22,6 +20,11 @@ void gdt_init() {
 	ptr.limit = (sizeof(struct GDTEntry) * 5) - 1;
 	ptr.base = (u32)&entries;
 
+	// These values can be stolen from
+	// https://wiki.osdev.org/GDT_Tutorial. It sets up 5 segments,
+	// one for null, and one for each combination of data/code and
+	// user/kernel mode. They all cover the entire memory range
+	// and do nothing of note. This is because the GDT isn't good
 	gdt_entry_set(&entries[0], 0, 0, 0, 0);
 	gdt_entry_set(&entries[1], 0, 0xFFFFFFFF, 0x9A, 0xCF);
 	gdt_entry_set(&entries[2], 0, 0xFFFFFFFF, 0x92, 0xCF);

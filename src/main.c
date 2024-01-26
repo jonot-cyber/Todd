@@ -57,19 +57,18 @@ void multiboot_info(struct MultiBoot* mboot) {
 
 static i8 buf[256];
 
+#include "scope.h"
 int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	initial_esp = initialStack;
 	gdt_init();
 	idt_init();
 	monitor_init();
-	asm volatile("sti");
 	timer_init(1000);
 	memory_init(mboot->mem_upper * 1024);
-	printf("Date: %d-%d-%d\nTime: %d:%d:%d\n", (u32)cmos_years(), (u32)cmos_months(), (u32)cmos_days(), (u32)cmos_hours(), (u32)cmos_minutes(), (u32)cmos_seconds());
 	keyboard_init();
 
-	struct Scope scope;
-	scope_init(&scope);
+	struct Scope2 scope;
+	scope2_init(&scope);
 
 	memset(buf, 0, 256);
 	u32 bufI = 0;
@@ -90,7 +89,7 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 			bufI = 0;
 			const i8* toParse = buf;
 			struct ParserListContents* lc = parse(&toParse);
-			scope_exec(&scope, lc);
+			scope2_exec(&scope, lc);
 			memset(buf, 0, 256);
 			write_string("=> ");
 		} else if (translated == '\n') {

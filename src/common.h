@@ -1,40 +1,47 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-// Some types to be used for consistency
-typedef unsigned int u32;
-typedef int i32;
-typedef unsigned short u16;
-typedef short i16;
-typedef unsigned char u8;
-typedef char i8;
-#ifndef __cplusplus
-typedef u8 bool;
-#endif
+// Consistency types
 
+// Unsigned 32 bit integer
+typedef unsigned int u32;
+
+// Signed 32 bit integer
+typedef int i32;
+
+// Unsigned 16 bit integer
+typedef unsigned short u16;
+
+// Signed 16 bit integer
+typedef short i16;
+
+// Unsigned 8 bit integer
+typedef unsigned char u8;
+
+// Signed 8 bit integer
+typedef char i8;
+
+// A boolean
+typedef u8 bool;
+
+// Make some constants. These are usually in the standard library, but
+// there's no standard library where we're going
 #define true 1
 #define false 0
 #define NULL 0
 
+// The initial stack pointer. Used for multitasking I think
 extern u32 initial_esp;
 
 /**
    Clears a section of memory to a value
-
-   @param start is the memory address to start filling at
-   @param value is what value to fill the range with
-   @param size is how many bytes to fill with value
  */
-void memset(void* start, u8 value, u32 size);
+void memset(void*, u8, u32);
 
 /**
    Copies memory from one place to another
-
-   @param src is where to copy from
-   @param dst is where to copy to
-   @param size is how many bytes to copy
  */
-void memcpy(const void* src, void* dst, u32 size);
+void memcpy(const void*, void*, u32);
 
 /**
    Triggers an infinite loop. Used in case of errors.
@@ -44,16 +51,14 @@ void halt();
 /**
    Aligns a value to a 4k page boundry. I put this here because it's
    used a bit
-
-   @param in the addr to take in
  */
-u32 align4k(u32 in);
+u32 align4k(u32);
 
 /**
    Assert that a condition is true. Doesn't do anything in release
    mode, but in debug will stop execution and display a message
  */
-void assert(bool condition, const i8* message);
+void assert(bool, const i8*);
 
 /**
    A module for use in multiboot. As of now unused
@@ -67,6 +72,9 @@ struct MultiBootModule {
 
 /**
    Multiboot header information
+
+   A lot of functions aren't implemented, and this is because I don't
+   use them.
 */
 struct MultiBoot {
 	u32 flags;
@@ -100,9 +108,24 @@ struct MultiBoot {
 	u8 color_info[5];
 } __attribute__ ((packed));
 
+/**
+   Detects whether the multiboot header has memory information present.
+ */
 bool multiboot_mem_present(struct MultiBoot*);
+
+/**
+   Detects whether the multiboot header has boot device information present.
+ */
 bool multiboot_boot_device_present(struct MultiBoot*);
+
+/**
+   Detects whether the multiboot header has command line information present.
+ */
 bool multiboot_cmd_line_present(struct MultiBoot*);
+
+/**
+   Detects whether the multiboot header has modules present.
+ */
 bool multiboot_mods_present(struct MultiBoot*);
 
 #endif

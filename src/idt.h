@@ -13,7 +13,13 @@ struct Registers {
 	u32 eip, cs, eflags, useresp, ss;
 };
 
+/**
+   Flush IDT information to the CPU
+ */
 extern void IDTFlush(u32);
+
+// A bunch of interrupt handlers. These are defined with assembly
+// macros from the internet
 extern void isr0();
 extern void isr1();
 extern void isr2();
@@ -64,9 +70,19 @@ extern void irq13();
 extern void irq14();
 extern void irq15();
 
+/**
+   Handles an interrupt
+ */
 void isrHandler(struct Registers);
+
+/**
+   This also handles an interrupt
+*/
 void irqHandler(struct Registers);
 
+/**
+   The flags of an IDT entry
+ */
 enum IDTFlags {
 	PRESENT = 0b10000000,
 	RING_0 = 0b01100000,
@@ -76,6 +92,10 @@ enum IDTFlags {
 	BASE = 0b00110,
 };
 
+/**
+   An IDT entry. This stores information about an interrupt
+   handler. It is also a structure that makes you hate Intel™
+ */
 struct IDTEntry {
 	u16 base_low;
 	u16 selector;
@@ -84,6 +104,9 @@ struct IDTEntry {
 	u16 base_high;
 } __attribute__((packed));
 
+/**
+  Set an IDT entry to the values we want
+ */
 void set_idt_entry(struct IDTEntry*, u32, u16, enum IDTFlags);
 
 struct IDTPointer {
@@ -91,6 +114,9 @@ struct IDTPointer {
 	u32 base;
 } __attribute__((packed));
 
+/**
+   Initialize the idt
+ */
 void idt_init();
 
 #endif
