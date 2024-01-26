@@ -14,9 +14,11 @@ static struct IDTEntry entries[256];
 static struct IDTPointer ptr;
 
 /**
-   Remap the PIC's interrupt requests don't interfere with CPU interrupts
+   Remap the PIC's interrupt requests don't interfere with CPU
+   interrupts
 */
 void remap_irq_table() {
+	// Don't ask me what these numbers mean
 	io_out(PRIMARY_CMD, 0x11);
 	io_out(SECONDARY_CMD, 0x11);
 	io_out(PRIMARY_DATA, 0x20);
@@ -35,8 +37,10 @@ void idt_init() {
 
 	memset(&entries, 0, sizeof(struct IDTEntry) * 256);
 
+	// Why do I make enums for these things and not use them?
 	enum IDTFlags flags = (enum IDTFlags)0x8E;
 
+	// Repetetive code.
 	set_idt_entry(&entries[0], (u32)isr0, 0x08, flags);
 	set_idt_entry(&entries[1], (u32)isr1, 0x08, flags);
 	set_idt_entry(&entries[2], (u32)isr2, 0x08, flags);
@@ -93,6 +97,7 @@ void idt_init() {
 }
 
 void set_idt_entry(struct IDTEntry* e, u32 base, u16 sel, enum IDTFlags f) {
+	// Intel :)
 	e->base_low = base & 0xFFFF;
 	e->base_high = (base >> 16) & 0xFFFF;
 
