@@ -1,5 +1,6 @@
 #include "common.h"
 #include "monitor.h"
+#include "timer.h"
 
 u32 initial_esp;
 
@@ -48,6 +49,14 @@ u32 align4k(u32 in) {
 		in += 0x1000;
 	}
 	return in;
+}
+
+void usleep(u32 ms) {
+	u32 target = ticks + ms;
+	while (ticks <= target) {
+		// Wait
+	}
+	return;
 }
 
 bool multiboot_mem_present(struct MultiBoot* m) {

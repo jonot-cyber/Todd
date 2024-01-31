@@ -61,6 +61,11 @@ u32 align4k(u32);
 void assert(bool, const i8*);
 
 /**
+   Sleeps for a number of milliseconds
+ */
+void usleep(u32);
+
+/**
    A module for use in multiboot. As of now unused
  */
 struct MultiBootModule {
