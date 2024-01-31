@@ -223,9 +223,9 @@ void printf(const i8* str, ...) {
 			}
 			case 'C':
 			{
-				i8 next = *(str+1);
+				i8 next = *(str+2);
 				if (next == 'f') {
-					i8 c = *(str+2);
+					i8 c = *(str+3);
 					u8 v;
 					if (c >= '0' && c <= '9') {
 						v = c - '0';
@@ -237,7 +237,7 @@ void printf(const i8* str, ...) {
 					foreground_color = (enum VGAColor)v;
 					str += 2;
 				} else if (next == 'b') {
-					i8 c = *(str+2);
+					i8 c = *(str+3);
 					u8 v;
 					if (c >= '0' && c <= '9') {
 						v = c - '0';
@@ -254,10 +254,10 @@ void printf(const i8* str, ...) {
 				}
 			}
 			}
-			str++;
+			str += 2;
 		} else {
 			write_char(*str);
+			str++;
 		}
-		str++;
 	}
 }
