@@ -11,14 +11,12 @@ u8 get_cmos_status() {
 u8 cmos_read(u8 reg) {
 	u8 a = 0;
 	u8 b = 1;
-	asm volatile("cli");
 	while (get_cmos_status());
 	io_out(0x70, 0x80 | reg);
 	while (a != b) {
 		a = b;
 		b = io_in(0x71);
 	}
-	asm volatile("sti");
 	return b;
 }
 

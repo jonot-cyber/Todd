@@ -5,6 +5,7 @@
 #include "memory.h"
 #include "monitor.h"
 #include "parser.h"
+#include "scope.h"
 #include "timer.h"
 #include "exe.h"
 
@@ -75,7 +76,6 @@ void memset_test() {
 	halt();
 }
 
-#include "scope.h"
 int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	initial_esp = initialStack;
 	gdt_init();
@@ -85,11 +85,13 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	memory_init(mboot->mem_upper * 1024);
 	keyboard_init();
 
+	outputToddOS();
+
 	struct Scope scope;
 	scope_init(&scope);
 
 	memset(buf, 0, 256);
-	u32 bufI = 0;
+	u32 buf_i = 0;
 	u32 balance = 0;
 
 	write_string("=> ");
@@ -104,7 +106,7 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 		i8 translated = translate_code(key);
 		write_char(translated);
 		if (translated == '\n' && balance == 0) {
-			bufI = 0;
+			buf_i = 0;
 			const i8* toParse = buf;
 			struct ParserListContents* lc = parse(&toParse);
 			u32 start_time = ticks;
@@ -116,12 +118,12 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 		} else if (translated == '\n') {
 			write_string(".. ");
 		} else if (translated == '\b') {
-			if (buf[bufI - 1] == '(') {
+			if (buf[buf_i - 1] == '(') {
 				balance--;
-			} else if (buf[bufI - 1] == ')') {
+			} else if (buf[buf_i - 1] == ')') {
 				balance++;
 			}
-			bufI--;
+			buf_i--;
 		} else {
 			if (translated == '(') {
 				balance++;
@@ -129,7 +131,7 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 			if (translated == ')') {
 				balance--;
 			}
-			buf[bufI++] = translated;
+			buf[buf_i++] = translated;
 		}
 	}
 	halt();
