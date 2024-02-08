@@ -5,6 +5,7 @@
 #include "monitor.h"
 #include "scope.h"
 #include "string.h"
+#include "task.h"
 
 const i8* TRUE_SYMBOL = "#t";
 const i8* FALSE_SYMBOL = "#f";
@@ -215,3 +216,7 @@ struct ASTNode* method_not(struct ASTNode* args, struct Scope* scope) {
 	return ret;
 }
 
+struct ASTNode* method_call_cc(struct ASTNode* args, struct Scope* scope) {
+	call_cc();
+	return NULL;
+}

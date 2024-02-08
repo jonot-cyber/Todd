@@ -1,6 +1,3 @@
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-
 #include "scope.h"
 
 #include "memory.h"
@@ -27,44 +24,47 @@ u32 pjw_hash(u8* data, u32 len) {
 void scope_init(struct Scope* scope) {
 	scope->data = kmalloc_z(SCOPE_TABLES * sizeof(struct ScopeEntry*));
 
-	struct ScopeEntry* tmp;
-	tmp->node = NULL;
-	tmp->params = NULL;
+	struct ScopeEntry tmp;
+	tmp.node = NULL;
+	tmp.params = NULL;
 
 	// Add our methods
-	tmp->method = method_add;
-	tmp->name = "+";
-	scope_add(scope, tmp);
-	tmp->method = method_sub;
-	tmp->name = "-";
-	scope_add(scope, tmp);
-	tmp->method = method_mul;
-	tmp->name = "*";
-	scope_add(scope, tmp);
-	tmp->method = method_div;
-	tmp->name = "/";
-	scope_add(scope, tmp);
-	tmp->method = method_if;
-	tmp->name = "if";
-	scope_add(scope, tmp);
-	tmp->method = method_eq;
-	tmp->name = "=";
-	scope_add(scope, tmp);
-	tmp->method = method_define;
-	tmp->name = "define";
-	scope_add(scope, tmp);
-	tmp->method = method_display;
-	tmp->name = "display";
-	scope_add(scope, tmp);
-	tmp->method = method_and;
-	tmp->name = "and";
-	scope_add(scope, tmp);
-	tmp->method = method_or;
-	tmp->name = "or";
-	scope_add(scope, tmp);
-	tmp->method = method_not;
-	tmp->name = "not";
-	scope_add(scope, tmp);
+	tmp.method = method_add;
+	tmp.name = "+";
+	scope_add(scope, &tmp);
+	tmp.method = method_sub;
+	tmp.name = "-";
+	scope_add(scope, &tmp);
+	tmp.method = method_mul;
+	tmp.name = "*";
+	scope_add(scope, &tmp);
+	tmp.method = method_div;
+	tmp.name = "/";
+	scope_add(scope, &tmp);
+	tmp.method = method_if;
+	tmp.name = "if";
+	scope_add(scope, &tmp);
+	tmp.method = method_eq;
+	tmp.name = "=";
+	scope_add(scope, &tmp);
+	tmp.method = method_define;
+	tmp.name = "define";
+	scope_add(scope, &tmp);
+	tmp.method = method_display;
+	tmp.name = "display";
+	scope_add(scope, &tmp);
+	tmp.method = method_and;
+	tmp.name = "and";
+	scope_add(scope, &tmp);
+	tmp.method = method_or;
+	tmp.name = "or";
+	scope_add(scope, &tmp);
+	tmp.method = method_not;
+	tmp.name = "not";
+	scope_add(scope, &tmp);
+	tmp.method = method_call_cc;
+	tmp.name = "call-cc";
+	scope_add(scope, &tmp);
 }
 
 void scope_add(struct Scope* scope, struct ScopeEntry* entry) {
@@ -156,5 +156,3 @@ struct ScopeEntry* scope_lookup(struct Scope* scope, i8 const* name) {
 	}
 	return ptr;
 }
-
-#pragma GCC pop_options

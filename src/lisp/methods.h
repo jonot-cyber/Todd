@@ -15,5 +15,6 @@ struct ASTNode* method_display(struct ASTNode*, struct Scope*);
 struct ASTNode* method_and(struct ASTNode*, struct Scope*);
 struct ASTNode* method_or(struct ASTNode*, struct Scope*);
 struct ASTNode* method_not(struct ASTNode*, struct Scope*);
+struct ASTNode* method_call_cc(struct ASTNode*, struct Scope*);
 
 #endif

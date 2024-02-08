@@ -4,8 +4,10 @@
 #include "keyboard.h"
 #include "memory.h"
 #include "monitor.h"
+#include "multiboot.h"
 #include "parser.h"
 #include "scope.h"
+#include "task.h"
 #include "timer.h"
 #include "exe.h"
 
@@ -86,6 +88,19 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	keyboard_init();
 
 	outputToddOS();
+	u32 pid = fork();
+	if (pid == 0) {
+		u32 start = 0xFFFFFFFF;
+		while (start != 1) {
+			printf("%d\n", start);
+			if (start % 2 == 0) {
+				start /= 2;
+			} else {
+				start = 3 * start + 1;
+			}
+			usleep(1000);
+		}
+	}
 
 	struct Scope scope;
 	scope_init(&scope);
@@ -135,5 +150,6 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 		}
 	}
 	halt();
+
 	return 0;
 }

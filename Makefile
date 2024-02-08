@@ -11,8 +11,8 @@ build/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) ${CFLAGS} -Isrc/lisp -Isrc -c -o $@ $^
 
-build/Kernel: build/src/boot.s.o build/src/gdt.s.o $(OBJS)
-	$(LD) -melf_i386 -Tsrc/link.ld -nostdlib -o $@ $^
+build/Kernel: build/src/boot.s.o build/src/gdt.s.o build/src/task.s.o $(OBJS)
+	$(LD) ${LDFLAGS} -melf_i386 -Tsrc/link.ld -nostdlib -o $@ $^
 
 clean:
 	rm -r build/*
