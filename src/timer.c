@@ -1,13 +1,17 @@
 #include "timer.h"
+
 #include "isr.h"
 #include "io.h"
-//#include "task.h"
+#include "monitor.h"
+#include "task.h"
 
 volatile u32 ticks = 0;
 
 static void timer_callback(struct Registers registers) {
 	ticks++;
-//	Task::switchTask();
+	if (ticks % 10 == 0) {		
+		switch_task();
+	}
 }
 
 void timer_init(u32 frequency) {

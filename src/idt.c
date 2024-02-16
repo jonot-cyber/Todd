@@ -121,6 +121,7 @@ void isrHandler(struct Registers registers) {
 		write_char('=');
 	}
 	printf("\nReceived Unhandled Interrupt: %d\n", registers.intNo);
+	printf("Error code: %b\n", registers.errCode);
 	for (u8 i = 0; i < 80; i++) {
 		write_char('=');
 	}

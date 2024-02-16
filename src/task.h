@@ -3,10 +3,13 @@
 
 #include "common.h"
 
-extern u32 ret_ptr;
-extern u32 jump_to;
+extern void* stacks[32];
+extern u32 initial_esps[32];
+extern u32 c_tasks;
+extern u32 i_task;
 
+void task_init();
 u32 fork();
-u32 call_cc();
+u32 switch_task();
 
 #endif

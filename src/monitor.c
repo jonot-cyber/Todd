@@ -93,6 +93,10 @@ void write_char(i8 c) {
 		u16* location = videoMemory + (cursorY * 80 + cursorX);
 		*location = color_character(c);
 		cursorX++;
+		if (cursorX == 80) {
+			cursorX = 0;
+			cursorY++;
+		}
 		break;
 	}
 	}
@@ -100,7 +104,6 @@ void write_char(i8 c) {
 	move_cursor();
 }
 
-/* Also outputs a string to the screen. Used because chars are signed in C++ */
 void write_string( const i8 *c) {
 	for (u32 i = 0; c[i]; i++) {
 		write_char((u8)c[i]);

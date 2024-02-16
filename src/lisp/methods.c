@@ -217,6 +217,5 @@ struct ASTNode* method_not(struct ASTNode* args, struct Scope* scope) {
 }
 
 struct ASTNode* method_call_cc(struct ASTNode* args, struct Scope* scope) {
-	call_cc();
 	return NULL;
 }

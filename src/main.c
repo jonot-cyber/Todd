@@ -78,30 +78,7 @@ void memset_test() {
 	halt();
 }
 
-int kmain(struct MultiBoot* mboot, u32 initialStack) {
-	initial_esp = initialStack;
-	gdt_init();
-	idt_init();
-	monitor_init();
-	timer_init(1000);
-	memory_init(mboot->mem_upper * 1024);
-	keyboard_init();
-
-	outputToddOS();
-	u32 pid = fork();
-	if (pid == 0) {
-		u32 start = 0xFFFFFFFF;
-		while (start != 1) {
-			printf("%d\n", start);
-			if (start % 2 == 0) {
-				start /= 2;
-			} else {
-				start = 3 * start + 1;
-			}
-			usleep(1000);
-		}
-	}
-
+void lisp_repl() {
 	struct Scope scope;
 	scope_init(&scope);
 
@@ -149,7 +126,31 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 			buf[buf_i++] = translated;
 		}
 	}
+}
+
+int kmain(struct MultiBoot* mboot, u32 initialStack) {
+	initial_esp = initialStack;
+	gdt_init();
+	idt_init();
+	monitor_init();
+	task_init();
+	timer_init(1000);
+	memory_init(mboot->mem_upper * 1024); // mem_upper is in kilobytes, convert to bytes
+	keyboard_init();
+
+	u32 pid = fork();
+	if (pid == 0) {
+		while (true) {
+			printf("A");
+		}
+	} else {
+		while (true) {
+			printf("B");
+		}
+	}
 	halt();
+
+	lisp_repl();
 
 	return 0;
 }
