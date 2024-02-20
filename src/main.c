@@ -8,6 +8,7 @@
 #include "parser.h"
 #include "scope.h"
 #include "task.h"
+#include "mutex.h"
 #include "timer.h"
 #include "exe.h"
 
@@ -139,13 +140,15 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	keyboard_init();
 
 	u32 pid = fork();
-	if (pid == 0) {
+	if (pid) {
 		while (true) {
-			printf("A");
+			write_char('A');
+			usleep(1);
 		}
 	} else {
 		while (true) {
-			printf("B");
+			write_char('H');
+			usleep(1);
 		}
 	}
 	halt();

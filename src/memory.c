@@ -6,16 +6,23 @@
 #include "idt.h"
 #include "isr.h"
 #include "monitor.h"
+#include "mutex.h"
 
 extern u32 end;
+
+// Make sure that all memory (de)allocations happen atomically.
+static mutex_t malloc_mtx;
+
 u32 alloc_ptr = (u32)&end;
 bool heap_exists = false;
 
 void* kmallocInternal(u32 size, bool align, u32* physical) {
+	lock(&malloc_mtx);
 	if (heap_exists) {
 		assert(!align, "kmallocInternal: heap doesn't support alignment");
 		void* tmp = heap_malloc(size);
 		*physical = (u32)tmp;
+		unlock(&malloc_mtx);
 		return tmp;
 	}
 	if (align) {
@@ -26,6 +33,7 @@ void* kmallocInternal(u32 size, bool align, u32* physical) {
 	}
 	u32 ret = alloc_ptr;
 	alloc_ptr += size;
+	unlock(&malloc_mtx);
 	return (void*)ret;
 }
 
@@ -53,8 +61,10 @@ void* kmallocAlignedPhysical(u32 size, u32* physical) {
 }
 
 void kfree(void* ptr) {
+	lock(&malloc_mtx);
 	assert(heap_exists, "Memory::kfree: Heap not initialized");
 	heap_free(ptr);
+	unlock(&malloc_mtx);
 }
 
 u32 virtual_to_physical(u32 virt) {

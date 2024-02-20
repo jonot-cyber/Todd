@@ -1,6 +1,8 @@
 #include "monitor.h"
 
 #include "io.h"
+#include "mutex.h"
+#include "queue.h"
 
 enum VGAColor background_color = BLACK;
 enum VGAColor foreground_color = WHITE;
@@ -10,6 +12,11 @@ static u8 cursorY;
 
 u16* videoMemory = (u16*)0xB8000;
 
+/* A queue to hold characters to print. This allows multiple threads
+ * to output text without starvation with the mutex */
+static struct Queue write_queue;
+static mutex_t write_lock = 0;
+
 void clear();
 u16 color_character(u8);
 void reset_color();
@@ -17,6 +24,7 @@ void move_cursor();
 void set_pos(u8, u8, u8);
 
 void monitor_init() {
+	queue_init(&write_queue, 64);
 	cursorX = 0;
 	cursorY = 0;
 	reset_color();
@@ -69,28 +77,28 @@ void scroll() {
 	}
 }
 
-/* Output a character to the screen */
-void write_char(i8 c) {
+/* Output a character without multi-thread considerations */
+void _write_char(i8 c) {
 	switch (c) {
-        case '\b':
+	case '\b':
 		if (cursorX != 0) {
 			cursorX--;
 			set_pos(cursorX, cursorY, ' ');
 		}
 		break;
-        case '\t':
-		cursorX = (cursorX + 8) & ~(8-1);
+	case '\t':
+		cursorX = (cursorX + 8) & ~7;
 		break;
-        case '\r':
+	case '\r':
 		cursorX = 0;
 		break;
-        case '\n':
+	case '\n':
 		cursorX = 0;
 		cursorY++;
 		break;
-        default:
+	default:
 	{
-		u16* location = videoMemory + (cursorY * 80 + cursorX);
+		u16* location = videoMemory + (cursorX + cursorY * 80);
 		*location = color_character(c);
 		cursorX++;
 		if (cursorX == 80) {
@@ -102,6 +110,30 @@ void write_char(i8 c) {
 	}
 	scroll();
 	move_cursor();
+}
+
+#include <task.h>
+/* Output a character to the screen */
+void write_char(i8 c) {
+	/* If we can't lock, write to the queue */
+	if (!try_lock(&write_lock)) {
+		bool inserted = queue_push(&write_queue, c);
+		if (inserted) {
+			return;
+		}
+		/* If the queue is full and we couldn't write, just
+		 * wait for the mutex like a regular person */
+		lock(&write_lock);
+	}
+	/* Start by filling out all the elements of the queue */
+	while (write_queue.size != 0) {
+		/* There can't be a null here because we are checking
+		 * if the queue size is zero */
+		u32 value = *queue_pop(&write_queue) & 0xFF;
+		_write_char(value);
+	}
+	_write_char(c);
+	unlock(&write_lock);
 }
 
 void write_string( const i8 *c) {
