@@ -65,4 +65,7 @@ void assert(bool, const i8*);
  */
 void usleep(u32);
 
+/* A LCG Random Number Generator */
+u32 rand();
+
 #endif

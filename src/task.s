@@ -12,26 +12,12 @@ fork:
 	cli
 	pushl %ebp
 	
-	/* Load in the size and size */
-	movl initial_esps, %eax
-	movl i_task, %ecx
-	movl (%eax, %ecx, 4), %eax
-	subl %esp, %eax
-	movl %esp, %ecx
-	pushl %eax
-	pushl %ecx
-
 	/* Copy the stack over */
+	pushl %esp
 	call move_stack
 
 	/* Reset the stack */
-	addl $8, %esp
-
-	/* Save our stack in the array, and create a new process.*/
-	movl $stacks, %ecx
-	movl c_tasks, %edx
-	movl %eax, (%ecx, %edx, 4)
-	incl c_tasks
+	addl $4, %esp
 
 	movl $0, %eax
 	popl %ebp

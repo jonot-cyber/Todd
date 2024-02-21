@@ -145,6 +145,18 @@ void save_modules(struct MultiBoot* mboot) {
 	}
 }
 
+void random_sleep() {
+	u32 r = rand() % 1000;
+	usleep(r);
+}
+
+void repeat_print(i8 c) {
+	while (true) {
+		write_char(c);
+		random_sleep();
+	}
+}
+
 int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	initial_esp = initialStack;
 	monitor_init();
@@ -158,17 +170,10 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	timer_init(1000);
 	keyboard_init();
 
-	check_modules(mboot);
-	u32 pid = fork();
-	if (pid) {
-		while (true) {
-			printf("AAAA\n");
-			usleep(1);
-		}
-	} else {
-		while (true) {
-			printf("BBBB\n");
-			usleep(1);
+	for (i8 c = 0; c < 26; c++) {
+		u32 pid = fork();
+		if (!pid) {
+			repeat_print('A'+c);
 		}
 	}
 	halt();
