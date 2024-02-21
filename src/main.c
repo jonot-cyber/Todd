@@ -11,6 +11,7 @@
 #include "mutex.h"
 #include "timer.h"
 #include "exe.h"
+#include <string.h>
 
 void outputToddOS() {
 	printf("%CrWelcome to %Cb1%CfcT%Cfeo%Cfad%Cfbd%Cf9O%CfdS%Cr\n");
@@ -29,33 +30,6 @@ void outputPassFail(bool value) {
 	} else {
 		printf("%CfcFAIL%Cr");
 	}
-}
-
-void multiboot_info(struct MultiBoot* mboot) {
-	printf("Flags: %b\n", mboot->flags);
-	write_string("Memory Information: ");
-	outputPassFail(multiboot_mem_present(mboot));
-	if (multiboot_mem_present(mboot)) {
-		printf("\n| Lower Memory Limit: %dKB\n", mboot->mem_lower);
-		printf("| Upper Memory Limit: %dKB\n", mboot->mem_upper);
-	}
-	write_string("Boot Device: ");
-	outputPassFail(multiboot_boot_device_present(mboot));
-	if (multiboot_boot_device_present(mboot)) {
-		printf("\n| Boot Device: 0x%x", mboot->boot_device);
-	}
-	write_string("\nCMD Line: ");
-	outputPassFail(multiboot_cmd_line_present(mboot));
-	if (multiboot_cmd_line_present(mboot)) {
-		printf("\n| Command Line: %s", mboot->cmd_line);
-	}
-	write_string("\nBoot Modules: ");
-	outputPassFail(multiboot_boot_device_present(mboot));
-	if (multiboot_boot_device_present(mboot)) {
-		printf("\n| #: %d", mboot->mods_count);
-		assert(mboot->mods_count == 0, "multiboot_info: Modules not supported");
-	}
-	write_char('\n');
 }
 
 static i8 buf[256];
@@ -129,25 +103,71 @@ void lisp_repl() {
 	}
 }
 
+void check_modules(struct MultiBoot* mboot) {
+	write_string("checking if presence of module information\n");
+	bool present = multiboot_mods_present(mboot);
+	if (present) {
+		write_string("found\n");
+	} else {
+		write_string("not found\n");
+		return;
+	}
+	u32 count = mboot->mods_count;
+	struct MultiBootModule* module_ptr = mboot->mods_addr;
+	printf("Module count: %d\n", count);
+	for (u32 i = 0; i < count; i++, module_ptr = (struct MultiBootModule*)module_ptr->mod_end + 1) {
+		const i8* name = module_ptr->string;
+		printf("[%d] %s\n", i + 1, name);
+		if (strcmp(name, "initrd.img") != 0) {
+			continue;
+		}
+		for (u32 p = module_ptr->mod_start, c = 0; p != module_ptr->mod_end; p++, c++) {
+			printf("0x%x ", *(u32*)p);
+			if (c % 4 == 3) {
+				usleep(1000);
+				write_char('\n');
+			}
+		}
+	}
+}
+
+void save_modules(struct MultiBoot* mboot) {
+	assert(multiboot_mods_present(mboot), "save_modules: No module information");
+	u32 count = mboot->mods_count;
+	struct MultiBootModule* mod_ptr = mboot->mods_addr;
+	for (u32 i = 0; i < count; i++) {
+		u32 size = mod_ptr->mod_end - mod_ptr->mod_start;
+		void* data = kmalloc(size);
+		memcpy((void*)mod_ptr->mod_start, data, size);
+		mod_ptr->mod_start = (u32)data;
+		mod_ptr->mod_end = (u32)data + size;
+		mod_ptr = (struct MultiBootModule*)mod_ptr->mod_end + 1;
+	}
+}
+
 int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	initial_esp = initialStack;
+	monitor_init();
 	gdt_init();
 	idt_init();
-	monitor_init();
 	task_init();
-	timer_init(1000);
+	/* Initializing memory will overwrite our module
+	 * information. We need to save this somewhere else */
+	save_modules(mboot);
 	memory_init(mboot->mem_upper * 1024); // mem_upper is in kilobytes, convert to bytes
+	timer_init(1000);
 	keyboard_init();
 
+	check_modules(mboot);
 	u32 pid = fork();
 	if (pid) {
 		while (true) {
-			write_char('A');
+			printf("AAAA\n");
 			usleep(1);
 		}
 	} else {
 		while (true) {
-			write_char('H');
+			printf("BBBB\n");
 			usleep(1);
 		}
 	}

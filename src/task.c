@@ -2,7 +2,6 @@
 
 #include "common.h"
 #include "memory.h"
-#include "monitor.h"
 
 void* stacks[32];
 u32 initial_esps[32];

@@ -3,6 +3,17 @@
 
 #include "common.h"
 
+
+/**
+   A module for use in multiboot.
+ */
+struct MultiBootModule {
+	u32 mod_start;
+	u32 mod_end;
+	i8* string;
+	u32 reserved;
+} __attribute__ ((packed));
+
 /**
    Multiboot header information
 
@@ -16,7 +27,7 @@ struct MultiBoot {
 	u32 boot_device;
 	u32 cmd_line;
 	u32 mods_count;
-	u32 mods_addr;
+	struct MultiBootModule* mods_addr;
 	u32 syms[3];
 	u32 mmap_length;
 	u32 mmap_addr;

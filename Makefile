@@ -17,5 +17,5 @@ build/Kernel: build/src/boot.s.o build/src/gdt.s.o build/src/task.s.o $(OBJS)
 clean:
 	rm -r build/*
 
-test: build/Kernel
-	qemu-system-i386 -kernel build/Kernel
+test: build/Kernel initrd.img
+	qemu-system-i386 -kernel build/Kernel -initrd initrd.img

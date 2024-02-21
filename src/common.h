@@ -65,14 +65,4 @@ void assert(bool, const i8*);
  */
 void usleep(u32);
 
-/**
-   A module for use in multiboot. As of now unused
- */
-struct MultiBootModule {
-	u32 mod_start;
-	u32 mod_end;
-	u32 string;
-	u32 reserved;
-} __attribute__ ((packed));
-
 #endif
