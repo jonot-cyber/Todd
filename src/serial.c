@@ -37,9 +37,17 @@ void serial_init() {
 	io_out(PORT + 4, 0x0F);
 }
 
-void serial_write_char(i8 c) {
+void _serial_write_char(i8 c) {
 	/* Wait for the port to be ready */
 	while ((io_in(PORT + 5) & 0x20) == 0);
 
 	io_out(PORT, c);
+}
+
+void serial_write_char(i8 c) {
+	/* Implement UNIX style line endings */
+	if (c == '\n') {
+		_serial_write_char('\r');
+	}
+	_serial_write_char(c);
 }
