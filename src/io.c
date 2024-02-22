@@ -68,11 +68,12 @@ void write_bin(u32 v) {
 }
 
 void write_dec(u32 v) {
-	if (v == 0) {
+	if (v < 10) {
+		write_char('0' + v);
 		return;
 	}
 	write_dec(v / 10);
-	write_char('0' + (v % 10));
+	write_dec(v % 10);
 }
 
 void write_hex(u8 c) {
