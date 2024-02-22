@@ -196,6 +196,10 @@ void printf(const i8* str, ...) {
 			default:
 				assert(false, "printf: Invalid format string");
 			}
+			str++;
+		} else {
+			write_char(*str);
 		}
+		str++;
 	}
 }
