@@ -65,7 +65,7 @@ void assert(bool, const i8*);
  */
 void usleep(u32);
 
-/* A LCG Random Number Generator */
+/* Returns a pseudo-random number, generated through a xorshift generator */
 u32 rand();
 
 #endif

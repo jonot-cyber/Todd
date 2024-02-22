@@ -4,7 +4,7 @@
 
 u32 initial_esp;
 
-static u32 rng_state = 0;
+static u32 rng_state = 0x12345678;
 
 void assert(bool condition, const i8* message) {
 #ifdef NDEBUG
@@ -62,10 +62,8 @@ void usleep(u32 ms) {
 }
 
 u32 rand() {
-	const u32 a = 1103515245;
-	const u32 c = 12345;
-	const u32 m = 1 << 31;
-	u32 ret = rng_state;
-	rng_state = (rng_state * a + c) % m;
-	return ret;
+	rng_state ^= rng_state << 13;
+	rng_state ^= rng_state >> 17;
+	rng_state ^= rng_state << 5;
+	return rng_state;
 }
