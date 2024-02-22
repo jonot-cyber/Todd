@@ -1,6 +1,6 @@
 #include "ps2.h"
 
-#include "io.h"
+#include "io_port.h"
 
 static bool isDualChannel = false;
 static bool isResetWorking = false;

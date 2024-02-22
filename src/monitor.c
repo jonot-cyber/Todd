@@ -1,6 +1,6 @@
 #include "monitor.h"
 
-#include "io.h"
+#include "io_port.h"
 #include "mutex.h"
 #include "queue.h"
 
@@ -78,7 +78,7 @@ void scroll() {
 }
 
 /* Output a character without multi-thread considerations */
-void _write_char(i8 c) {
+void monitor_write_char(i8 c) {
 	switch (c) {
 	case '\b':
 		if (cursorX != 0) {
@@ -112,36 +112,6 @@ void _write_char(i8 c) {
 	move_cursor();
 }
 
-#include <task.h>
-/* Output a character to the screen */
-void write_char(i8 c) {
-	/* If we can't lock, write to the queue */
-	if (!try_lock(&write_lock)) {
-		bool inserted = queue_push(&write_queue, c);
-		if (inserted) {
-			return;
-		}
-		/* If the queue is full and we couldn't write, just
-		 * wait for the mutex like a regular person */
-		lock(&write_lock);
-	}
-	/* Start by filling out all the elements of the queue */
-	while (write_queue.size != 0) {
-		/* There can't be a null here because we are checking
-		 * if the queue size is zero */
-		u32 value = *queue_pop(&write_queue) & 0xFF;
-		_write_char(value);
-	}
-	_write_char(c);
-	unlock(&write_lock);
-}
-
-void write_string( const i8 *c) {
-	for (u32 i = 0; c[i]; i++) {
-		write_char((u8)c[i]);
-	}
-}
-
 /* Reset the colors */
 void reset_color() {
 	foreground_color = WHITE;
@@ -153,146 +123,12 @@ u16 color_character(u8 c) {
 	return c | (attr << 8);
 }
 
-void write_hex(u8 c) {
-	const char hexDigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-	u8 hi = c >> 4;
-	u8 low = c & 0xF;
-	write_char(hexDigits[hi]);
-	write_char(hexDigits[low]);
-}
-
-void write_hex16(u16 c) {
-	u8 hi = c >> 8;
-	u8 lo = c;
-	write_hex(hi);
-	write_hex(lo);
-}
-
-void write_hex32(u32 c) {
-	u16 hi = c >> 16;
-	u16 lo = c;
-	write_hex16(hi);
-	write_hex16(lo);
-}
-
-void write_dec(u32 c) {
-	if (c < 10) {
-		write_char('0'+c);
-		return;
-	}
-	write_dec(c / 10);
-	write_dec(c % 10);
-}
-
-void write_bin(u32 c) {
-	for (u32 i = 0; i < 32; i++) {
-		u8 value = (c >> (31-i)) & 1;
-		write_char('0' + value);
-	}
-}
-
 void set_pos(u8 x, u8 y, u8 c) {
 	u8 oldX = cursorX;
 	u8 oldY = cursorY;
 	cursorX = x;
 	cursorY = y;
-	write_char(c);
+	monitor_write_char(c);
 	cursorX = oldX;
 	cursorY = oldY;
-}
-
-u8 hex2num(i8 c) {
-	if (c >= '0' && c <= '9') {
-		return c - '0';
-	}
-	if (c >= 'a' && c <= 'f') {
-		return c - 'a' + 10;
-	}
-	return c - 'A' + 10;
-}
-
-void printf(const i8* str, ...) {
-	u32 stack_ptr = (u32)&str;
-	u32 offset = 4;
-	while (*str) {
-		if (*str == '%') {
-			i8 next = *(str + 1);
-			switch (next) {
-			case '%':
-				write_char('%');
-				break;
-			case 'b':
-			{
-				u32 v = *(u32*)(stack_ptr+offset);
-				write_bin(v);
-				offset += 4;
-				break;
-			}
-			case 'd':
-			{
-				u32 v = *(u32*)(stack_ptr + offset);
-				write_dec(v);
-				offset += 4;
-				break;
-			}
-			case 'x':
-			{
-				u32 v = *(u32*)(stack_ptr + offset);
-				write_hex32(v);
-				offset += 4;
-				break;
-			}
-			case 's':
-			{
-				const i8* v = *(const i8**)(stack_ptr + offset);
-				write_string(v);
-				offset += 4;
-				break;
-			}
-			case 'c':
-			{
-				u32 v = *(u32*)(stack_ptr + offset);
-				write_char(v);
-				offset += 4;
-				break;
-			}
-			case 'C':
-			{
-				i8 next = *(str+2);
-				if (next == 'f') {
-					i8 c = *(str+3);
-					u8 v;
-					if (c >= '0' && c <= '9') {
-						v = c - '0';
-					} else if (c >= 'A' && c <= 'F') {
-						v = c - 'A' + 10;
-					} else {
-						v = c - 'a' + 10;
-					}
-					foreground_color = (enum VGAColor)v;
-					str += 2;
-				} else if (next == 'b') {
-					i8 c = *(str+3);
-					u8 v;
-					if (c >= '0' && c <= '9') {
-						v = c - '0';
-					} else if (c >= 'A' && c <= 'F') {
-						v = c - 'A' + 10;
-					} else {
-						v = c - 'a' + 10;
-					}
-					background_color = (enum VGAColor)v;
-					str += 2;
-				} else if (next == 'r') {
-					reset_color();
-					str += 1;
-				}
-			}
-			}
-			str += 2;
-		} else {
-			write_char(*str);
-			str++;
-		}
-	}
 }

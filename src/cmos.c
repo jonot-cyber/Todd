@@ -1,5 +1,5 @@
 #include "cmos.h"
-#include "io.h"
+#include "io_port.h"
 
 u8 get_cmos_status() {
 	// Select status register

@@ -1,5 +1,5 @@
 #include "common.h"
-#include "monitor.h"
+#include "io.h"
 #include "timer.h"
 
 u32 initial_esp;

@@ -1,14 +1,15 @@
 #include "common.h"
 #include "gdt.h"
 #include "idt.h"
+#include "io.h"
 #include "keyboard.h"
 #include "memory.h"
 #include "monitor.h"
 #include "multiboot.h"
 #include "parser.h"
 #include "scope.h"
+#include "serial.h"
 #include "task.h"
-#include "mutex.h"
 #include "timer.h"
 #include "exe.h"
 #include <string.h>
@@ -159,7 +160,7 @@ void repeat_print(i8 c) {
 
 int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	initial_esp = initialStack;
-	monitor_init();
+	io_init(false, true);
 	gdt_init();
 	idt_init();
 	task_init();
