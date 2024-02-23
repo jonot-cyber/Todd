@@ -3,33 +3,61 @@
 #include "common.h"
 #include "memory.h"
 
+/* Tasks are stored in a linked list */
+static struct Task root_task;
+struct Task* current_task;
+
+struct Task* to_del = NULL;
+
 void* stacks[32];
 u32 initial_esps[32];
-u32 c_tasks = 1;
-u32 i_task = 0;
 
 void task_init() {
-	for (u32 i = 0; i < 32; i++) {
-		stacks[i] = NULL;
-		initial_esps[i] = initial_esp;
-	}
+	current_task = &root_task;
+	current_task->stack = NULL;
+	current_task->intial_esp = initial_esp;
+	current_task->next = current_task;
+	current_task->prev = current_task;
 }
 
 void move_stack(void* start) {
-	u32 size = initial_esps[i_task] - (u32)start;
-	assert(size < 4096, "move_stack: Stack Overflow!");
+	struct Task* new_task = kmalloc(sizeof(struct Task));
+	void* new_stack = kmalloc(4096);
+
+	u32 size = current_task->intial_esp - (u32)start;
 	u16 offset = 4096 - size;
+	memcpy(start, new_stack + offset, size);
+	
+	new_task->intial_esp = (u32)new_stack + 4096;
+	void* new_esp = (void*)(new_stack + offset);
+	new_task->stack = new_esp;
+	new_task->next = current_task->next;
+	new_task->prev = current_task;
+	current_task->next = new_task;
+}
 
-	/* If we have a pre-existing block for the stack, don't make a
-	 * new one. Prevents memory leaks with joining threads. */
-	void* ret = NULL;//stacks[c_tasks] - (4096 - size);
-	if (true || !stacks[c_tasks]) {
-		ret = kmalloc(4096);
+void save_stack(void* esp) {
+	current_task->stack = esp;
+}
+
+void incr_task() {
+	current_task = current_task->next;
+}
+
+void* load_stack() {
+	return current_task->stack;
+}
+
+void delete_task() {
+	/* Remove all references to this task */
+	struct Task* next = to_del->next;
+	struct Task* prev = to_del->prev;
+	prev->next = next;
+	next->prev = prev;
+	if (to_del == &root_task) {
+		return;
 	}
-
-	memcpy(start, ret+offset, size);
-	initial_esps[c_tasks] = ((u32)ret + 4096);
-	void* new_esp = (void*)(ret+offset);
-	stacks[c_tasks] = new_esp;
-	c_tasks++;
+	void* stack_buffer = (void*)(to_del->intial_esp - 4096);
+	kfree(stack_buffer);
+	kfree(to_del);
 }

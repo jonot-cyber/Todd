@@ -1,10 +1,8 @@
-	.extern initial_esps
-	.extern move_stack
-	.extern stacks
-	.extern c_tasks
-	.extern i_task
 	.globl fork
 	.globl switch_task
+	.globl join
+	.extern current_task
+	.extern to_del
 
 fork:
 	/* Push some stuff over */
@@ -28,24 +26,43 @@ switch_task:
 	pushfl
 	cli
 	pushl %ebp
-	/* Save current stack */
-	movl $stacks, %ecx
-	movl i_task, %edx
-	movl %esp, (%ecx, %edx, 4)
-
-	/* Increment the task, rounded */
-	movl i_task, %eax
-	incl %eax
-	movl $0, %edx
-	divl c_tasks
-	movl %edx, i_task
 	
-	/* Load the stack from the array to the stack pointer */
-	movl $stacks, %eax
-	movl i_task, %ecx
-	movl (%eax,%ecx,4), %esp
+	/* Save current stack */
+	pushl %esp
+	call save_stack
+	addl $4, %esp
+
+	/* Increment the task */
+	call incr_task
+	
+	/* Load the stack to the stack pointer */
+	call load_stack
+	movl %eax, %esp
 
 	/* Return 1 to show that we switched */
+	movl $1, %eax
+	popl %ebp
+	popfl
+	ret
+
+join:
+	pushfl
+	cli
+	pushl %ebp
+
+	pushl %esp
+	call save_stack
+	addl $4, %esp
+
+	movl current_task, %eax
+	movl %eax, to_del
+
+	call incr_task
+
+	call load_stack
+	movl %eax, %esp
+
+	call delete_task
 	movl $1, %eax
 	popl %ebp
 	popfl

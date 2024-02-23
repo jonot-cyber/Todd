@@ -3,14 +3,26 @@
 
 #include "common.h"
 
-extern void* stacks[32];
-extern u32 initial_esps[32];
-extern u32 c_tasks;
-extern u32 i_task;
+struct Task {
+	void* stack;
+	u32 intial_esp;
+	struct Task* next;
+	struct Task* prev;
+};
+
+extern struct Task* current_task;
+extern struct Task* to_del;
 
 void task_init();
+
 u32 fork();
 u32 switch_task();
+u32 join();
+
 void move_stack(void* start);
+void save_stack(void* esp);
+void incr_task();
+void* load_stack();
+void delete_task();
 
 #endif

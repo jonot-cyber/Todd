@@ -1,4 +1,5 @@
 #include "common.h"
+#include "fat.h"
 #include "gdt.h"
 #include "idt.h"
 #include "io.h"
@@ -114,20 +115,13 @@ void check_modules(struct MultiBoot* mboot) {
 		return;
 	}
 	u32 count = mboot->mods_count;
-	struct MultiBootModule* module_ptr = mboot->mods_addr;
 	printf("Module count: %d\n", count);
+	struct MultiBootModule* module_ptr = mboot->mods_addr;
 	for (u32 i = 0; i < count; i++, module_ptr = (struct MultiBootModule*)module_ptr->mod_end + 1) {
 		const i8* name = module_ptr->string;
 		printf("[%d] %s\n", i + 1, name);
-		if (strcmp(name, "initrd.img") != 0) {
-			continue;
-		}
-		for (u32 p = module_ptr->mod_start, c = 0; p != module_ptr->mod_end; p++, c++) {
-			printf("0x%x ", *(u32*)p);
-			if (c % 4 == 3) {
-				usleep(1000);
-				write_char('\n');
-			}
+		if (strcmp(name, "initrd.img") == 0) {
+			fat_info((struct FatBootSector*)module_ptr->mod_start);
 		}
 	}
 }
@@ -148,22 +142,24 @@ void save_modules(struct MultiBoot* mboot) {
 
 void random_sleep() {
 	u32 r = rand() % 1000;
-	usleep(r);
+	usleep(1000 + r);
 }
 
 void repeat_print(i8 c) {
-	while (true) {
+	random_sleep();
+	for (u32 i = 0; i < 64; i++) {
 		write_char(c);
-		random_sleep();
 	}
+	join();
 }
 
 int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	initial_esp = initialStack;
-	io_init(false, true);
+	io_init(true, true);
 	gdt_init();
 	idt_init();
 	task_init();
+	
 	/* Initializing memory will overwrite our module
 	 * information. We need to save this somewhere else */
 	save_modules(mboot);
@@ -171,12 +167,14 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	timer_init(1000);
 	keyboard_init();
 
-	for (i8 c = 0; c < 26; c++) {
+	for (u32 i = 0; i < 100; i++) {
 		u32 pid = fork();
-		if (!pid) {
-			repeat_print('A'+c);
+		if (pid == 0) {
+			repeat_print('A' + (i % 26));
 		}
 	}
+	halt();
+	check_modules(mboot);
 	halt();
 
 	lisp_repl();

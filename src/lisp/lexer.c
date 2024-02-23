@@ -1,6 +1,6 @@
 #include "lexer.h"
 
-#include "../monitor.h"
+#include "../io.h"
 #include "../memory.h"
 #include "lex_test.h"
 

@@ -1,7 +1,7 @@
 #include "string.h"
 
+#include "io.h"
 #include "memory.h"
-#include "monitor.h"
 
 u32 strlen(const i8* src) {
 	assert(src != NULL, "strlen: src is null");
@@ -58,10 +58,7 @@ i32 str_to_int(const i8* s) {
 	u32 len = strlen(s);
 	for (; i < len; i++) {
 		u8 c = s[i] - '0';
-		if (c > 9) {
-			write_string("PANIC: Cannot convert string to integer\n");
-			halt();
-		}
+		assert(c < 10, "str_to_int: Cannot convert string to integer\n");
 		ret *= 10;
 		ret += c;
 	}
@@ -76,10 +73,7 @@ u32 str_to_uint(const i8* s) {
 	u32 len = strlen(s);
 	for (u32 i = 0; i < len; i++) {
 		u8 c = s[i] - '0';
-		if (c > 9) {
-			write_string("PANIC: Cannot convert string to integer\n");
-			halt();
-		}
+		assert(c < 10, "str to int: Cannot convert string to integer\n");
 		ret *= 10;
 		ret += c;
 	}

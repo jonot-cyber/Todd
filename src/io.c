@@ -20,7 +20,7 @@ void io_init(bool enable_monitor, bool enable_serial) {
 		SERIAL_BACKEND = true;
 		serial_init();
 	}
-	queue_init(&io_queue, 256);
+	queue_init(&io_queue, 64);
 }
 
 void _write_char(i8 c) {
