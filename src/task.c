@@ -18,6 +18,8 @@ void task_init() {
 	current_task->intial_esp = initial_esp;
 	current_task->next = current_task;
 	current_task->prev = current_task;
+	current_task->priority = 0;
+	current_task->age = 0;
 }
 
 void move_stack(void* start) {
@@ -33,6 +35,8 @@ void move_stack(void* start) {
 	new_task->stack = new_esp;
 	new_task->next = current_task->next;
 	new_task->prev = current_task;
+	new_task->priority = 0;
+	new_task->age = 0;
 	current_task->next = new_task;
 }
 
@@ -42,6 +46,11 @@ void save_stack(void* esp) {
 
 void incr_task() {
 	current_task = current_task->next;
+	while (current_task->priority > current_task->age) {
+		current_task->age++;
+		current_task = current_task->next;
+	}
+	current_task->age = 0;
 }
 
 void* load_stack() {

@@ -167,7 +167,7 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	timer_init(1000);
 	keyboard_init();
 
-	for (u32 i = 0; i < 100; i++) {
+	for (u32 i = 0; i < 260; i++) {
 		u32 pid = fork();
 		if (pid == 0) {
 			repeat_print('A' + (i % 26));

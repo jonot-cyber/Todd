@@ -8,6 +8,8 @@ struct Task {
 	u32 intial_esp;
 	struct Task* next;
 	struct Task* prev;
+	u32 priority;
+	u32 age;
 };
 
 extern struct Task* current_task;
