@@ -5,7 +5,7 @@ void lock(mutex_t* mtx) {
 	/* Deprioritize a task while waiting on a lock. Disable
 	 * interrupts for this part of the code */
 	asm volatile("cli");
-	current_task->priority = 8;
+	current_task->priority = 15;
 	asm volatile("sti");
 	
 	u32 res = 1;
