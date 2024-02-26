@@ -1,10 +1,12 @@
 #include "common.h"
 #include "io.h"
+#include "mutex.h"
 #include "timer.h"
 
 u32 initial_esp;
 
 static u32 rng_state = 0x12345678;
+static mutex_t rng_mutex;
 
 void assert(bool condition, const i8* message) {
 #ifdef NDEBUG
@@ -62,8 +64,10 @@ void usleep(u32 ms) {
 }
 
 u32 rand() {
+	lock(&rng_mutex);
 	rng_state ^= rng_state << 13;
 	rng_state ^= rng_state >> 17;
 	rng_state ^= rng_state << 5;
+	unlock(&rng_mutex);
 	return rng_state;
 }
