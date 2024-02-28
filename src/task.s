@@ -9,6 +9,7 @@ fork:
 	pushfl
 	cli
 	pushl %ebp
+	movl %esp, %ebp
 	
 	/* Copy the stack over */
 	pushl %esp
@@ -26,6 +27,7 @@ switch_task:
 	pushfl
 	cli
 	pushl %ebp
+	movl %esp, %ebp
 	
 	/* Save current stack */
 	pushl %esp
@@ -49,6 +51,7 @@ join:
 	pushfl
 	cli
 	pushl %ebp
+	movl %esp, %ebp
 
 	pushl %esp
 	call save_stack
