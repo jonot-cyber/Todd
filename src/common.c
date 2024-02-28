@@ -1,6 +1,7 @@
 #include "common.h"
 #include "io.h"
 #include "mutex.h"
+#include "stack_trace.h"
 #include "timer.h"
 
 u32 initial_esp;
@@ -17,6 +18,7 @@ void assert(bool condition, const i8* message) {
 	}
 	asm volatile("cli"); // Disable interrupts
 	printf("PANIC: %s\n", message);
+	stack_trace();
 	halt();
 }
 

@@ -7,6 +7,7 @@
 #include "isr.h"
 #include "io.h"
 #include "mutex.h"
+#include "stack_trace.h"
 
 extern u32 end;
 
@@ -62,7 +63,7 @@ void* kmallocAlignedPhysical(u32 size, u32* physical) {
 
 void kfree(void* ptr) {
 	lock(&malloc_mtx);
-	assert(heap_exists, "Memory::kfree: Heap not initialized");
+	assert(heap_exists, "kfree: Heap not initialized");
 	heap_free(ptr);
 	unlock(&malloc_mtx);
 }
@@ -107,6 +108,7 @@ void page_fault(struct Registers regs) {
 	u32 address;
 	asm volatile("mov %%cr2, %0" : "=r"(address));
 	printf("PAGE FAULT: 0x%x", address);
+	stack_trace();
 	halt();
 }
 
