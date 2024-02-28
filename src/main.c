@@ -1,5 +1,4 @@
 #include "common.h"
-#include "fat.h"
 #include "gdt.h"
 #include "idt.h"
 #include "io.h"
@@ -121,7 +120,7 @@ void check_modules(struct MultiBoot* mboot) {
 		const i8* name = module_ptr->string;
 		printf("[%d] %s\n", i + 1, name);
 		if (strcmp(name, "initrd.img") == 0) {
-			fat_info((struct FatBootSector*)module_ptr->mod_start);
+//			fat_info((struct FatBootSector*)module_ptr->mod_start);
 		}
 	}
 }
@@ -140,19 +139,6 @@ void save_modules(struct MultiBoot* mboot) {
 	}
 }
 
-void random_sleep() {
-	u32 r = rand() % 1000;
-	usleep(1000 + r);
-}
-
-void repeat_print(i8 c) {
-	random_sleep();
-	for (u32 i = 0; i < 64; i++) {
-		write_char(c);
-	}
-	join();
-}
-
 int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	initial_esp = initialStack;
 	io_init(true, true);
@@ -167,15 +153,7 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	timer_init(1000);
 	keyboard_init();
 
-	for (u32 i = 0; i < 260; i++) {
-		u32 pid = fork();
-		if (pid == 0) {
-			repeat_print('A' + (i % 26));
-		}
-	}
-	halt();
 	check_modules(mboot);
-	halt();
 
 	lisp_repl();
 

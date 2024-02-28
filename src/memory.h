@@ -2,6 +2,24 @@
 #define MEMORY_H
 #include "idt.h"
 
+enum PageTableFlags {
+	PAGE_TABLE_PRESENT	 = 0x1,
+	PAGE_TABLE_WRITE	 = 0x2,
+	PAGE_TABLE_USER		 = 0x4,
+	PAGE_TABLE_WRITE_THROUGH = 0x8,
+	PAGE_TABLE_DISABLE_CACHE = 0x10,
+	PAGE_TABLE_ACCESSED      = 0x20,
+};
+
+enum PageFrameFlags {
+	PAGE_FRAME_PRESENT	 = 0x1,
+	PAGE_FRAME_WRITE	 = 0x2,
+	PAGE_FRAME_USER		 = 0x4,
+	PAGE_FRAME_WRITE_THROUGH = 0x8,
+	PAGE_FRAME_DISABLE_CACHE = 0x10,
+	PAGE_FRAME_ACCESSED	 = 0x20,
+};
+
 /**
    Initialize the memory susbsystem
  */

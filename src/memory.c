@@ -75,22 +75,30 @@ u32 virtual_to_physical(u32 virt) {
 	return ret + virt % 0x1000;
 }
 
+void alloc_page(struct PageDirectory* dir, u32 addr) {
+	u32 frame_addr = addr / 0x1000;
+	u32 table_i = frame_addr % 1024; /* address in table */
+	u32 dir_i = frame_addr / 1024; /* address in directory */
+	struct PageTable* table = (struct PageTable*)(((u32)dir->entries[dir_i]) & 0xfffff000);
+	if (!table) {
+		table = kmallocAligned(sizeof(struct PageTable));
+		memset(table, 0, sizeof(struct PageTable));
+		u32 table_u = (u32)table;
+		table_u |= PAGE_TABLE_PRESENT | PAGE_TABLE_WRITE;
+		dir->entries[dir_i] = (struct PageTable*)table_u;
+	}
+	table->entries[table_i] = addr | PAGE_FRAME_PRESENT | PAGE_FRAME_WRITE | PAGE_FRAME_USER;
+}
+
 void memory_init(u32 bytes) {
 	struct PageDirectory* pageDirectory = kmallocAligned(sizeof(struct PageDirectory));
 	memset(pageDirectory, 0, sizeof(struct PageDirectory));
-
-	struct PageTable* tables = kmallocAligned(sizeof(struct PageTable) * 1024);
-	memset(tables, 0, sizeof(struct PageTable) * 1024);
-	for (u32 i = 0; i < 1023; i++) {
-		pageDirectory->entries[i] = (struct PageTable*)((u32)(&tables[i]) | 3);
-		for (u32 j = 0; j < 1024; j++) {
-			tables[i].entries[j] = (u32)(0x1000 * (1024 * i + j) | 7);
-		}
-		tables[1023].entries[i] = (u32)(&tables[i]) | 7;
+	
+	u32 it = 0;
+	while (it < alloc_ptr + 1024 * 128) {
+		alloc_page(pageDirectory, it);
+		it += 0x1000;
 	}
-	pageDirectory->entries[1023] = (struct PageTable*)((u32)(&tables[1023]) | 3);
-	tables[1023].entries[1023] = (u32)pageDirectory | 7;
-
 	register_interrupt_handler(14, page_fault);
 
 	asm volatile("mov %0, %%cr3" :: "r"(pageDirectory));
@@ -99,7 +107,7 @@ void memory_init(u32 bytes) {
 	cr0 |= 0x80000000;
 	asm volatile("mov %0, %%cr0" :: "r"(cr0));
 
-	heap_init((void*)alloc_ptr, bytes - alloc_ptr - (0x1000 * 1024));
+	heap_init((void*)alloc_ptr, 1024 * 128);
 
 	heap_exists = true;
 }
