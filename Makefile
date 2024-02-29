@@ -1,4 +1,4 @@
-CFLAGS += -m32 -nostdinc -fno-builtin
+CFLAGS += -m32 -nostdinc -fno-builtin -g
 
 SRCS = $(wildcard src/*.c src/lisp/*.c)
 OBJS = $(patsubst %.c,build/%.o,$(SRCS))
@@ -19,3 +19,7 @@ clean:
 
 test: build/Kernel
 	qemu-system-i386 -kernel build/Kernel
+
+# Set QEMU to be debuggable
+debug: build/Kernel
+	qemu-system-i386 -s -S -kernel build/Kernel

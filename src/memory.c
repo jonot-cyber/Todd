@@ -91,11 +91,12 @@ void alloc_page(struct PageDirectory* dir, u32 addr) {
 }
 
 void memory_init(u32 bytes) {
+	const u32 heap_size = 128 * 1024;
 	struct PageDirectory* pageDirectory = kmallocAligned(sizeof(struct PageDirectory));
 	memset(pageDirectory, 0, sizeof(struct PageDirectory));
 	
 	u32 it = 0;
-	while (it < alloc_ptr + 1024 * 128) {
+	while (it < alloc_ptr + heap_size) {
 		alloc_page(pageDirectory, it);
 		it += 0x1000;
 	}
@@ -107,7 +108,7 @@ void memory_init(u32 bytes) {
 	cr0 |= 0x80000000;
 	asm volatile("mov %0, %%cr0" :: "r"(cr0));
 
-	heap_init((void*)alloc_ptr, 1024 * 128);
+	heap_init((void*)alloc_ptr, heap_size);
 
 	heap_exists = true;
 }

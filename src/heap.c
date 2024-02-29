@@ -7,18 +7,22 @@ void heap_init(void* start_addr, u32 size) {
 
 	// Create a heap region that covers all available memory
 	struct HeapHeader* full_header = (struct HeapHeader*)start_addr;
-	struct HeapFooter* full_footer = (struct HeapFooter*)((u32)start_addr + size - sizeof(struct HeapFooter));
+	struct HeapFooter* full_footer = (struct HeapFooter*)((u32)start_addr + size - sizeof(struct HeapFooter) - sizeof(struct HeapHeader));
 	full_header->is_hole = true;
 	full_header->size = size;
 	full_footer->header = full_header;
+	full_header->is_last = true;
 }
 
 void* heap_malloc(u32 size) {
-	// Calculate how big of a hole we need, including the header and footer
+	// Calculate how big of a hole we need, including the header
+	// and footer
 	u32 full_size = size + sizeof(struct HeapHeader) + sizeof(struct HeapFooter);
 
 	// Loop over all holes
-	for (struct HeapHeader* h = (struct HeapHeader*)heap_start; !h->is_last; h = (struct HeapHeader*)((u32)h + h->size)) {
+	bool first = true;
+	for (struct HeapHeader* h = heap_start; !h->is_last || first; h = (struct HeapHeader*)((u32)h + h->size)) {
+		first = false;
 		// Check if memory is available
 		if (!h->is_hole) {
 			continue;
@@ -27,13 +31,16 @@ void* heap_malloc(u32 size) {
 		if (h->size < full_size) {
 			continue;
 		}
-		// Simple case: If our hole is the exact size we need, fill it
+		// Simple case: If our hole is the exact size we need,
+		// fill it
 		if (h->size == full_size) {
 			h->is_hole = false;
 			return (void*)((u32)h + sizeof(struct HeapHeader));
 		}
 
-		// If it isn't the exact size, we need to split the hole in two. This code checks if we have room to do that
+		// If it isn't the exact size, we need to split the
+		// hole in two. This code checks if we have room to do
+		// that
 		u32 remaining_size = h->size - full_size;
 		if (remaining_size < sizeof(struct HeapHeader) + sizeof(struct HeapFooter)) {
 			continue;
@@ -45,7 +52,8 @@ void* heap_malloc(u32 size) {
 		next_header->is_hole = true;
 		next_header->is_last = h->is_last;
 
-		// Modify the existing footer to point to that new header
+		// Modify the existing footer to point to that new
+		// header
 		struct HeapFooter* next_footer = (struct HeapFooter*)((u32)h + h->size - sizeof(struct HeapFooter));
 		next_footer->header = next_header;
 
@@ -61,6 +69,7 @@ void* heap_malloc(u32 size) {
 	}
 
 	// We couldn't find any memory
+	assert(false, "heap_malloc: Out of memory");
 	return NULL;
 }
 

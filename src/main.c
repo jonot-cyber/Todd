@@ -4,15 +4,13 @@
 #include "io.h"
 #include "keyboard.h"
 #include "memory.h"
-#include "monitor.h"
 #include "multiboot.h"
 #include "parser.h"
 #include "scope.h"
-#include "serial.h"
+#include "string.h"
 #include "task.h"
 #include "timer.h"
 #include "exe.h"
-#include <string.h>
 
 void outputToddOS() {
 	printf("%CrWelcome to %Cb1%CfcT%Cfeo%Cfad%Cfbd%Cf9O%CfdS%Cr\n");
@@ -34,25 +32,6 @@ void outputPassFail(bool value) {
 }
 
 static i8 buf[256];
-
-void memset_test() {
-	// Allocate a 1MB buffer
-	i8* buf = kmalloc(1024 * 1024);
-	printf("Filling buffer:\n");
-	for (u32 i = 0; i < 1024 * 1024; i++) {
-		u8 c = i & 0xFF;
-		buf[i] = *(i8*)&c;
-	}
-	printf("Buffer filled\n");
-	u32 start_time = ticks;
-	for (u32 i = 0; i < 256; i++) {
-		memset(buf, i & 0xFF, 1024 * 1024);
-	}
-	u32 end_time = ticks;
-	printf("Finished memset() in %d ms\n", end_time - start_time);
-	kfree(buf);
-	halt();
-}
 
 void lisp_repl() {
 	struct Scope scope;
@@ -154,6 +133,14 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	keyboard_init();
 
 	check_modules(mboot);
+
+	for (u32 i = 0; i < 126; i++) {
+		kmalloc(1024);
+		printf("%d kb allocated\n", i * 1);
+	}
+	printf("We can do 126");
+	// Try another allocation
+	kmalloc(1024);
 
 	lisp_repl();
 
