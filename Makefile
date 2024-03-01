@@ -18,8 +18,8 @@ clean:
 	rm -r build/*
 
 test: build/Kernel
-	qemu-system-i386 -kernel build/Kernel
+	qemu-system-i386 -kernel build/Kernel -no-reboot -no-shutdown
 
 # Set QEMU to be debuggable
 debug: build/Kernel
-	qemu-system-i386 -s -S -kernel build/Kernel
+	qemu-system-i386 -s -S -kernel build/Kernel -no-reboot -no-shutdown
