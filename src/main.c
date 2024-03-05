@@ -134,13 +134,11 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 
 	check_modules(mboot);
 
-	for (u32 i = 0; i < 126; i++) {
+	for (u32 i = i; true; i++) {
 		kmalloc(1024);
-		printf("%d kb allocated\n", i * 1);
-	}
-	printf("We can do 126");
-	// Try another allocation
-	kmalloc(1024);
+		printf("Allocated %d kb\n", i);
+	}	
+	halt();
 
 	lisp_repl();
 

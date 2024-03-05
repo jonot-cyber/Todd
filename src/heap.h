@@ -30,7 +30,7 @@ void heap_init(void*,u32);
 /**
    Allocate memory on the heap.
  */
-void* heap_malloc(u32);
+void* heap_malloc(u32, bool);
 
 /**
    Free memory from the heap.

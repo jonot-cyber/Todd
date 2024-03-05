@@ -2,6 +2,8 @@
 #define MEMORY_H
 #include "idt.h"
 
+extern struct PageDirectory* current_directory;
+
 enum PageTableFlags {
 	PAGE_TABLE_PRESENT	 = 0x1,
 	PAGE_TABLE_WRITE	 = 0x2,
@@ -73,4 +75,7 @@ struct PageTable {
 struct PageDirectory {
 	struct PageTable* entries[1024];
 };
+
+bool alloc_page(struct PageDirectory*, u32);
+
 #endif
