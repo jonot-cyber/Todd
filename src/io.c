@@ -126,6 +126,7 @@ u8 hex2num(i8 c) {
 		return c - 'a' + 10;
 	}
 	assert(false, "hex2num: Invalid hex digit");
+	return 0;
 }
 
 void printf(const i8* str, ...) {
@@ -142,6 +143,7 @@ void printf(const i8* str, ...) {
 			{
 				u32 v = *(u32*)(stack_ptr + offset);
 				write_bin(v);
+				break;
 			}
 			case 'd':
 			{
@@ -180,19 +182,23 @@ void printf(const i8* str, ...) {
 					i8 c = *(str + 3);
 					u8 v = hex2num(c);
 					foreground_color = v;
+					break;
 				}
 				case 'b':
 				{
 					i8 c = *(str + 3);
 					u8 v = hex2num(c);
 					background_color = v;
+					break;
 				}
 				case 'r':
 					reset_color();
 					str++;
+					break;
 				default:
 					assert(false, "printf: Invalid format string");
 				}
+				break;
 			}
 			default:
 				assert(false, "printf: Invalid format string");

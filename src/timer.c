@@ -12,6 +12,7 @@ static void timer_callback(struct Registers registers) {
 	if (ticks % 1 == 0) {		
 		switch_task();
 	}
+	UNUSED(registers);
 }
 
 void timer_init(u32 frequency) {
@@ -25,4 +26,5 @@ void timer_init(u32 frequency) {
 
 	io_out(0x40, l);
 	io_out(0x40, h);
+	//asm volatile("sti");
 }

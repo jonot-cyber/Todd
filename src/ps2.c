@@ -2,8 +2,8 @@
 
 #include "io_port.h"
 
-static bool isDualChannel = false;
-static bool isResetWorking = false;
+static bool is_dual_channel = false;
+static bool is_reset_working = false;
 
 const u16 CMD_PORT = 0x64;
 const u16 DATA_PORT = 0x60;
@@ -24,7 +24,7 @@ void ps2_init() {
 	// Set Controller Configuration Byte
 	io_out(CMD_PORT, 0x20);
 	u8 ret = io_in(DATA_PORT);
-	isDualChannel = (ret & 0x10) == 0;
+	is_dual_channel = (ret & 0x10) == 0;
 	// TODO: Get this working without translation
 	ret = (ret & 0xBF) | 0; // Disable translation
 	io_out(CMD_PORT, 0x60);
@@ -36,8 +36,8 @@ void ps2_init() {
 
 	// Reset devices
 	io_out(DATA_PORT, 0xFF);
-	u8 resetResponse = io_in(DATA_PORT);
-	isResetWorking = resetResponse == 0xFA;
+	u8 reset_response = io_in(DATA_PORT);
+	is_reset_working = reset_response == 0xFA;
 }
 
 void enable_port(bool first) {

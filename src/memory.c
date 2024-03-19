@@ -1,7 +1,6 @@
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
 #include "memory.h"
 
+#include "common.h"
 #include "heap.h"
 #include "idt.h"
 #include "isr.h"
@@ -22,11 +21,13 @@ struct PageDirectory* current_directory;
 static u32 alloc_ptr = (u32)&end;
 static bool heap_exists = false;
 
-void* kmallocInternal(u32 size, bool align, u32* physical) {
+void* kmalloc_internal(u32 size, bool align, u32* physical) {
 	lock(&malloc_mtx);
 	if (heap_exists) {
 		void* tmp = heap_malloc(size, align);
-		*physical = (u32)tmp;
+		if (physical != NULL) {
+			*physical = (u32)tmp;
+		}
 		unlock(&malloc_mtx);
 		return tmp;
 	}
@@ -43,7 +44,7 @@ void* kmallocInternal(u32 size, bool align, u32* physical) {
 }
 
 void* kmalloc(u32 size) {
-	void* ret = kmallocInternal(size, false, NULL);
+	void* ret = kmalloc_internal(size, false, NULL);
 	return ret;
 }
 
@@ -53,17 +54,16 @@ void* kmalloc_z(u32 size) {
 	return ret;
 }
 
-void* kmallocAligned(u32 size) {
-	void* res = kmallocInternal(size, true, NULL);
-	return res;
+void* kmalloc_a(u32 size) {
+	return kmalloc_internal(size, true, NULL);
 }
 
-void* kmallocPhysical(u32 size, u32* physical) {
-	return kmallocInternal(size, false, physical);
+void* kmalloc_p(u32 size, u32* physical) {
+	return kmalloc_internal(size, false, physical);
 }
 
-void* kmallocAlignedPhysical(u32 size, u32* physical) {
-	return kmallocInternal(size, true, physical);
+void* kmalloc_ap(u32 size, u32* physical) {
+	return kmalloc_internal(size, true, physical);
 }
 
 void kfree(void* ptr) {
@@ -96,7 +96,7 @@ bool alloc_page(struct PageDirectory* dir, u32 addr) {
 		if (malloc_mtx) {
 			unlock(&malloc_mtx);
 		}
-		table = kmallocAligned(sizeof(struct PageTable));
+		table = kmalloc_a(sizeof(struct PageTable));
 		/* Restore malloc state */
 		if (is_locked) {
 			lock(&malloc_mtx);
@@ -114,7 +114,7 @@ bool alloc_page(struct PageDirectory* dir, u32 addr) {
 void memory_init(u32 bytes) {
 	memory_size = bytes;
 	const u32 heap_size = 128 * 1024;
-	current_directory = kmallocAligned(sizeof(struct PageDirectory));
+	current_directory = kmalloc_a(sizeof(struct PageDirectory));
 	memset(current_directory, 0, sizeof(struct PageDirectory));
 	
 	u32 it = 0;
@@ -136,11 +136,9 @@ void memory_init(u32 bytes) {
 }
 
 void page_fault(struct Registers regs) {
+	UNUSED(regs);
 	u32 address;
 	asm volatile("mov %%cr2, %0" : "=r"(address));
 	printf("PAGE FAULT: 0x%x", address);
-	stack_trace();
 	halt();
 }
-
-#pragma GCC pop_options

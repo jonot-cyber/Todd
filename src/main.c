@@ -1,29 +1,31 @@
 #include "common.h"
 #include "gdt.h"
+#include "heap.h"
 #include "idt.h"
 #include "io.h"
 #include "keyboard.h"
 #include "memory.h"
 #include "multiboot.h"
-#include "parser.h"
-#include "scope.h"
+#include "lisp/parser.h"
+#include "lisp/scope.h"
 #include "string.h"
+#include "tar.h"
 #include "task.h"
 #include "timer.h"
-#include "exe.h"
+#include "lisp/exe.h"
 
-void outputToddOS() {
+void output_todd_os() {
 	printf("%CrWelcome to %Cb1%CfcT%Cfeo%Cfad%Cfbd%Cf9O%CfdS%Cr\n");
 }
 
-void outputHeader() {
+void output_header() {
 	for (int i = 0; i < 80; i++) {
 		write_char('=');
 	}
 	write_char('\n');
 }
 
-void outputPassFail(bool value) {
+void output_pass_fail(bool value) {
 	if (value) {
 		printf("%CfaPASS%Cr");
 	} else {
@@ -54,12 +56,14 @@ void lisp_repl() {
 		write_char(translated);
 		if (translated == '\n' && balance == 0) {
 			buf_i = 0;
-			const i8* toParse = buf;
-			struct ParserListContents* lc = parse(&toParse);
+			const i8* to_parse = buf;
+			u32 start_mem = heap_get_used();
+			struct ParserListContents* lc = parse(&to_parse);
 			u32 start_time = ticks;
 			scope_exec(&scope, lc);
 			u32 end_time = ticks;
-			printf("%d ms\n", end_time - start_time);
+			u32 end_mem = heap_get_used();
+			printf("[%d ms, %d bytes]\n", end_time - start_time, end_mem - start_mem);
 			memset(buf, 0, 256);
 			write_string("=> ");
 		} else if (translated == '\n') {
@@ -98,8 +102,8 @@ void check_modules(struct MultiBoot* mboot) {
 	for (u32 i = 0; i < count; i++, module_ptr = (struct MultiBootModule*)module_ptr->mod_end + 1) {
 		const i8* name = module_ptr->string;
 		printf("[%d] %s\n", i + 1, name);
-		if (strcmp(name, "initrd.img") == 0) {
-//			fat_info((struct FatBootSector*)module_ptr->mod_start);
+		if (strcmp(name, "build/initrd.tar") == 0) {
+			ustar_info((struct TarHeader*)module_ptr->mod_start);
 		}
 	}
 }
@@ -133,12 +137,6 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	keyboard_init();
 
 	check_modules(mboot);
-
-	for (u32 i = i; true; i++) {
-		kmalloc(1024);
-		printf("Allocated %d kb\n", i);
-	}	
-	halt();
 
 	lisp_repl();
 

@@ -1,7 +1,8 @@
 #include "idt.h"
-#include "isr.h"
 #include "io.h"
 #include "io_port.h"
+#include "isr.h"
+#include "stack_trace.h"
 
 // IO ports for the Programmable Interrupt Controller
 const u16 PRIMARY_CMD = 0x20;
@@ -12,6 +13,8 @@ const u16 SECONDARY_DATA = 0xA1;
 // IDT entries
 static struct IDTEntry entries[256];
 static struct IDTPointer ptr;
+
+static 
 
 /**
    Remap the PIC's interrupt requests don't interfere with CPU
@@ -32,6 +35,7 @@ void remap_irq_table() {
 }
 
 void idt_init() {
+	// Clear interrupt table
 	ptr.limit = sizeof(struct IDTEntry) * 256 - 1;
 	ptr.base = (u32)&entries;
 
@@ -109,32 +113,31 @@ void set_idt_entry(struct IDTEntry* e, u32 base, u16 sel, enum IDTFlags f) {
 /**
    Handle an interrupt
 */
-void isrHandler(struct Registers registers) {
+void isr_handler(struct Registers registers) {
 	// If there's a handler, call it instead
-	if (handlers[registers.intNo]) {
-		Handler handler = handlers[registers.intNo];
-		handler(registers);
-		return;
+	Handler handler = get_handler(registers.int_no);
+	if (handler) {
+		return handler(registers);
 	}
 	write_char('\n');
 	for (u8 i = 0; i < 80; i++) {
 		write_char('=');
 	}
-	printf("\nReceived Unhandled Interrupt: %d\n", registers.intNo);
-	printf("Error code: %b\n", registers.errCode);
+	printf("\nReceived Unhandled Interrupt: %d\n", registers.int_no);
+	printf("Error code: %b\n", registers.err_code);
 	for (u8 i = 0; i < 80; i++) {
 		write_char('=');
 	}
 	write_char('\n');
-	halt();
+	stack_trace();
 }
 
 /**
    Handle an IRQ interrupt
  */
-void irqHandler(struct Registers registers) {
+void irq_handler(struct Registers registers) {
 	// Reset PIC
-	if (registers.intNo >= 40) {
+	if (registers.int_no >= 40) {
 		// Send reset signal to secondary
 		io_out(0xA0, 0x20);
 	}
@@ -142,8 +145,9 @@ void irqHandler(struct Registers registers) {
 	io_out(0x20, 0x20);
 
 	// If there's a handler, call it.
-	if (handlers[registers.intNo]) {
-		Handler handler = handlers[registers.intNo];
-		handler(registers);
+	Handler method = get_handler(registers.int_no);
+	if (method && (u32)method != 0xdeadbeef) {
+		return method(registers);
 	}
+	return;
 }

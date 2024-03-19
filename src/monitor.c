@@ -7,15 +7,14 @@
 enum VGAColor background_color = BLACK;
 enum VGAColor foreground_color = WHITE;
 
-static u8 cursorX;
-static u8 cursorY;
+static u8 cursor_x;
+static u8 cursor_y;
 
-u16* videoMemory = (u16*)0xB8000;
+volatile u16* video_memory = (u16*)0xB8000;
 
 /* A queue to hold characters to print. This allows multiple threads
  * to output text without starvation with the mutex */
 static struct Queue write_queue;
-static mutex_t write_lock = 0;
 
 void clear();
 u16 color_character(u8);
@@ -25,8 +24,8 @@ void set_pos(u8, u8, u8);
 
 void monitor_init() {
 	queue_init(&write_queue, 64);
-	cursorX = 0;
-	cursorY = 0;
+	cursor_x = 0;
+	cursor_y = 0;
 	reset_color();
 	clear();
 }
@@ -36,44 +35,44 @@ void clear() {
 	u16 blank = color_character(' ');
 
 	for (u32 i = 0; i < 80*25; i++) {
-		videoMemory[i] = blank;
+		video_memory[i] = blank;
 	}
 
 	// Move the hardware cursor back to the start.
-	cursorX = 0;
-	cursorY = 0;
+	cursor_x = 0;
+	cursor_y = 0;
 	move_cursor();
 }
 
 void move_cursor() {
-	u16 cursorLocation = cursorY * 80 + cursorX;
+	u16 cursor_loc = cursor_y * 80 + cursor_x;
 
-	u16 cmdPort = 0x3D4;
-	u16 dataPort = 0x3D5;
+	const u16 CMD_PORT = 0x3D4;
+	const u16 DATA_PORT = 0x3D5;
 
 	// Send lower bit
-	io_out(cmdPort, 14);
-	io_out(dataPort, cursorLocation >> 8);
+	io_out(CMD_PORT, 14);
+	io_out(DATA_PORT, cursor_loc >> 8);
 
 	// Send upper bit
-	io_out(cmdPort, 15);
-	io_out(dataPort, cursorLocation);
+	io_out(CMD_PORT, 15);
+	io_out(DATA_PORT, cursor_loc);
 }
 
 /* Scroll the screen if there is no space left over */
 void scroll() {
 	u16 blank = color_character(' ');
 
-	if (cursorY >= 25) {
+	if (cursor_y >= 25) {
 		for (u32 i = 0; i < 24 * 80; i++) {
-			videoMemory[i] = videoMemory[i+80];
+			video_memory[i] = video_memory[i+80];
 		}
 
 		for (u32 i = 24 * 80; i < 25 * 80; i++) {
-			videoMemory[i] = blank;
+			video_memory[i] = blank;
 		}
 
-		cursorY = 24;
+		cursor_y = 24;
 	}
 }
 
@@ -81,29 +80,29 @@ void scroll() {
 void monitor_write_char(i8 c) {
 	switch (c) {
 	case '\b':
-		if (cursorX != 0) {
-			cursorX--;
-			set_pos(cursorX, cursorY, ' ');
+		if (cursor_x != 0) {
+			cursor_x--;
+			set_pos(cursor_x, cursor_y, ' ');
 		}
 		break;
 	case '\t':
-		cursorX = (cursorX + 8) & ~7;
+		cursor_x = (cursor_x + 8) & ~7;
 		break;
 	case '\r':
-		cursorX = 0;
+		cursor_x = 0;
 		break;
 	case '\n':
-		cursorX = 0;
-		cursorY++;
+		cursor_x = 0;
+		cursor_y++;
 		break;
 	default:
 	{
-		u16* location = videoMemory + (cursorX + cursorY * 80);
+		volatile u16* location = video_memory + (cursor_x + cursor_y * 80);
 		*location = color_character(c);
-		cursorX++;
-		if (cursorX == 80) {
-			cursorX = 0;
-			cursorY++;
+		cursor_x++;
+		if (cursor_x == 80) {
+			cursor_x = 0;
+			cursor_y++;
 		}
 		break;
 	}
@@ -124,11 +123,11 @@ u16 color_character(u8 c) {
 }
 
 void set_pos(u8 x, u8 y, u8 c) {
-	u8 oldX = cursorX;
-	u8 oldY = cursorY;
-	cursorX = x;
-	cursorY = y;
+	u8 oldX = cursor_x;
+	u8 oldY = cursor_y;
+	cursor_x = x;
+	cursor_y = y;
 	monitor_write_char(c);
-	cursorX = oldX;
-	cursorY = oldY;
+	cursor_x = oldX;
+	cursor_y = oldY;
 }

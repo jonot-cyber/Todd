@@ -49,8 +49,8 @@
 .globl irq14
 .globl irq15
 
-.extern isrHandler
-.extern irqHandler
+.extern isr_handler
+.extern irq_handler
 
 GDTFlush:
 	mov 4(%esp), %eax
@@ -153,7 +153,7 @@ isr_common_stub:
 	mov %eax, %es
 	mov %eax, %fs
 	mov %eax, %gs
-	call isrHandler
+	call isr_handler
 	pop %eax
 	mov %eax, %ds
 	mov %eax, %es
@@ -174,7 +174,7 @@ irq_common_stub:
 	mov %eax, %fs
 	mov %eax, %gs
 
-	call irqHandler
+	call irq_handler
 
 	pop %ebx
 	mov %ebx, %ds

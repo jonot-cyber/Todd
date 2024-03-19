@@ -1,10 +1,9 @@
 #include "scope.h"
 
+#include "exe.h"
 #include "memory.h"
 #include "methods.h"
-#include "monitor.h"
 #include "string.h"
-#include "timer.h"
 
 #define SCOPE_TABLES 512
 
@@ -21,62 +20,48 @@ u32 pjw_hash(u8* data, u32 len) {
 	return ret;
 }
 
+void scope_add_builtin(struct Scope* scope, struct ASTNode* (*fn)(struct ASTNode*, struct Scope*), i8* name) {
+	// Create a temporary variable to store the scope entry
+	struct ScopeEntry tmp;
+	// Reset all the values so we don't forget any
+	memset(&tmp, 0, sizeof(struct ScopeEntry));
+
+	struct ASTNode* method_node = kmalloc_z(sizeof(struct ASTNode));
+	method_node->type = AST_METHOD;
+	method_node->data.method.method = fn;
+
+	tmp.node = method_node;
+	tmp.name = name;
+	scope_add(scope, &tmp);
+}
+
 void scope_init(struct Scope* scope) {
 	scope->data = kmalloc_z(SCOPE_TABLES * sizeof(struct ScopeEntry*));
 
-	struct ScopeEntry tmp;
-	tmp.node = NULL;
-	tmp.params = NULL;
-
-	// Add our methods
-	tmp.method = method_add;
-	tmp.name = "+";
-	scope_add(scope, &tmp);
-	tmp.method = method_sub;
-	tmp.name = "-";
-	scope_add(scope, &tmp);
-	tmp.method = method_mul;
-	tmp.name = "*";
-	scope_add(scope, &tmp);
-	tmp.method = method_div;
-	tmp.name = "/";
-	scope_add(scope, &tmp);
-	tmp.method = method_if;
-	tmp.name = "if";
-	scope_add(scope, &tmp);
-	tmp.method = method_eq;
-	tmp.name = "=";
-	scope_add(scope, &tmp);
-	tmp.method = method_define;
-	tmp.name = "define";
-	scope_add(scope, &tmp);
-	tmp.method = method_display;
-	tmp.name = "display";
-	scope_add(scope, &tmp);
-	tmp.method = method_and;
-	tmp.name = "and";
-	scope_add(scope, &tmp);
-	tmp.method = method_or;
-	tmp.name = "or";
-	scope_add(scope, &tmp);
-	tmp.method = method_not;
-	tmp.name = "not";
-	scope_add(scope, &tmp);
-	tmp.method = method_call_cc;
-	tmp.name = "call-cc";
-	scope_add(scope, &tmp);
+	scope_add_builtin(scope, method_add, "+");
+	scope_add_builtin(scope, method_sub, "-");
+	scope_add_builtin(scope, method_mul, "*");
+	scope_add_builtin(scope, method_div, "/");
+	scope_add_builtin(scope, method_if, "if");
+	scope_add_builtin(scope, method_eq, "=");
+	scope_add_builtin(scope, method_define, "define");
+	scope_add_builtin(scope, method_display, "display");
+	scope_add_builtin(scope, method_and, "and");
+	scope_add_builtin(scope, method_or, "or");
+	scope_add_builtin(scope, method_not, "not");
+	scope_add_builtin(scope, method_lambda, "lambda");
 }
 
 void scope_add(struct Scope* scope, struct ScopeEntry* entry) {
 	struct ScopeEntry* entry_cpy = kmalloc(sizeof(struct ScopeEntry));
 	memcpy(entry, entry_cpy, sizeof(struct ScopeEntry));
-	u32 name_len = strlen(entry_cpy->name) + 1;
-	i8* new_name_buf = kmalloc(name_len);
+	u32 name_len = strlen(entry_cpy->name);
+	i8* new_name_buf = kmalloc_z(name_len + 1);
 	memcpy(entry_cpy->name, new_name_buf, name_len);
 	entry_cpy->level = scope->level;
 	entry_cpy->next = NULL;
-	entry_cpy->name = new_name_buf;
 	u32 bucket_id = pjw_hash((u8*)entry_cpy->name, strlen(entry_cpy->name));
+	entry_cpy->name = new_name_buf;
 	bucket_id %= SCOPE_TABLES;
 	if (scope->data[bucket_id]) {
 		// TODO: Implement replacing
@@ -93,7 +78,7 @@ void scope_del(struct Scope* scope, i8 const* name) {
 	bucket_id %= SCOPE_TABLES;
 	struct ScopeEntry* root = scope->data[bucket_id];
 	assert(root != NULL,
-	       "scope2_del: Attempted to delete nonexistent key");
+	       "scope_del: Attempted to delete nonexistent key");
 	if (strcmp(root->name, name) == 0) {
 		// We found our key at the root
 		scope->data[bucket_id] = root->next;
@@ -113,7 +98,7 @@ void scope_del(struct Scope* scope, i8 const* name) {
 		prev = ptr;
 		ptr = ptr->next;
 	}
-	assert(false, "scope2_del: Could not find key");
+	assert(false, "scope_del: Could not find key");
 	return;
 }
 
@@ -121,14 +106,14 @@ void scope_in(struct Scope* scope) {
 	scope->level++;
 }
 
-struct ScopeEntry* scope2_recursively_delete(struct ScopeEntry* entry, u32 level) {
+struct ScopeEntry* scope_recursively_delete(struct ScopeEntry* entry, u32 level) {
 	if (entry == NULL) {
 		return NULL;
 	}
 	if (entry->level < level) {
 		return entry;
 	}
-	struct ScopeEntry* ret = scope2_recursively_delete(entry->next, level);
+	struct ScopeEntry* ret = scope_recursively_delete(entry->next, level);
 	// TODO: Most of the memory in the kernel isn't getting freed
 	// at all. I'm going to need to start caring about that at
 	// some point.
@@ -138,7 +123,7 @@ struct ScopeEntry* scope2_recursively_delete(struct ScopeEntry* entry, u32 level
 
 void scope_out(struct Scope* scope) {
 	for (u32 i = 0; i < SCOPE_TABLES; i++) {
-		scope->data[i] = scope2_recursively_delete(scope->data[i], scope->level);
+		scope->data[i] = scope_recursively_delete(scope->data[i], scope->level);
 	}
 	scope->level--;
 }

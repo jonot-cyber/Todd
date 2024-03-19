@@ -1,6 +1,5 @@
 #include "string.h"
 
-#include "io.h"
 #include "memory.h"
 
 u32 strlen(const i8* src) {
@@ -46,12 +45,12 @@ u32 strcmp_span(const i8* src, const i8* start, u32 size) {
 }
 
 i32 str_to_int(const i8* s) {
-	bool isNegative = false;
+	bool is_negative = false;
 	i32 ret = 0;
 	
 	u32 i = 0;
 	if (s[0] == '-') {
-		isNegative = true;
+		is_negative = true;
 		i++;
 		
 	}
@@ -62,7 +61,7 @@ i32 str_to_int(const i8* s) {
 		ret *= 10;
 		ret += c;
 	}
-	if (isNegative) {
+	if (is_negative) {
 		return -ret;
 	}
 	return ret;

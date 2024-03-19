@@ -37,4 +37,9 @@ void* heap_malloc(u32, bool);
  */
 void heap_free(void*);
 
+/**
+   Get the amount of memory used in the heap
+ */
+u32 heap_get_used();
+
 #endif

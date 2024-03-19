@@ -6,8 +6,8 @@
 
 const u32 MAX_DEPTH = 64;
 
-struct ParserListContents* parseListContents(const i8**);
-struct ParserValue* parseValue(const i8** p);
+struct ParserListContents* parse_list_contents(const i8**);
+struct ParserValue* parse_value(const i8** p);
 
 void mempeek(const i8* p, const u32 c) {
 	i8* buf = kmalloc(c + 1);
@@ -17,14 +17,14 @@ void mempeek(const i8* p, const u32 c) {
 	kfree(buf);
 }
 
-struct ParserListContents* parseList(const i8** p) {
+struct ParserListContents* parse_list(const i8** p) {
 	const i8* start = *p;
 	struct LexerToken token = lex(p);
 	struct ParserListContents* contents;
 	if (token.type != LEFT) {
 		goto err;
 	}
-	contents = parseListContents(p);
+	contents = parse_list_contents(p);
 	if (contents == NULL) {
 		goto err;
 	}
@@ -38,14 +38,14 @@ err:
 	return NULL;
 }
 
-struct ParserListContents* parseQuoteList(const i8** p) {
+struct ParserListContents* parse_quote_list(const i8** p) {
 	const i8* start = *p;
 	struct LexerToken token = lex(p);
 	struct ParserListContents* contents;
 	if (token.type != QUOTE_LEFT) {
 		goto err;
 	}
-	contents = parseListContents(p);
+	contents = parse_list_contents(p);
 	if (contents == NULL) {
 		goto err;
 	}
@@ -60,7 +60,7 @@ err:
 }
 
 
-struct ParserListContents* parsePair(const i8** p) {
+struct ParserListContents* parse_pair(const i8** p) {
 	const i8* start = *p;
 	struct LexerToken token = lex(p);
 	struct ParserValue* v1;
@@ -70,7 +70,7 @@ struct ParserListContents* parsePair(const i8** p) {
 	if (token.type != LEFT) {
 		goto err;
 	}
-	v1 = parseValue(p);
+	v1 = parse_value(p);
 	if (v1 == NULL) {
 		goto err;
 	}
@@ -78,7 +78,7 @@ struct ParserListContents* parsePair(const i8** p) {
 	if (token.type != DOT) {
 		goto err;
 	}
-	v2 = parseValue(p);
+	v2 = parse_value(p);
 	if (v2 == NULL) {
 		goto err;
 	}
@@ -98,7 +98,7 @@ err:
 	return NULL;
 }
 
-struct ParserSpan* parseQuoteSymbol(const i8** p) {
+struct ParserSpan* parse_quote_symbol(const i8** p) {
 	const i8* start = *p;
 	struct LexerToken token = lex(p);
 	struct ParserSpan* ret;
@@ -114,7 +114,7 @@ err:
 	return NULL;
 }
 
-struct ParserSpan* parseSymbol(const i8** p) {
+struct ParserSpan* parse_symbol(const i8** p) {
 	const i8* start = *p;
 	struct LexerToken token = lex(p);
 	struct ParserSpan* ret;
@@ -130,7 +130,7 @@ err:
 	return NULL;
 }
 
-struct ParserSpan* parseNumber(const i8** p) {
+struct ParserSpan* parse_number(const i8** p) {
 	const i8* start = *p;
 	struct LexerToken token = lex(p);
 	struct ParserSpan* ret;
@@ -146,7 +146,7 @@ err:
 	return NULL;
 }
 
-struct ParserSpan* parsePath(const i8** p) {
+struct ParserSpan* parse_path(const i8** p) {
 	const i8* start = *p;
 	struct LexerToken token = lex(p);
 	struct ParserSpan* ret;
@@ -162,7 +162,7 @@ err:
 	return NULL;
 }
 
-struct ParserSpan* parseString(const i8** p) {
+struct ParserSpan* parse_string(const i8** p) {
 	const i8* start = *p;
 	struct LexerToken token = lex(p);
 	struct ParserSpan* ret;
@@ -178,57 +178,57 @@ err:
 	return NULL;
 }
 
-struct ParserValue* parseValue(const i8** p) {
-	struct ParserListContents* list = parseList(p);
+struct ParserValue* parse_value(const i8** p) {
+	struct ParserListContents* list = parse_list(p);
 	if (list != NULL) {
 		struct ParserValue* ret = kmalloc(sizeof(struct ParserValue));
 		ret->data = list;
 		ret->t = P_LIST;
 		return ret;
 	}
-	struct ParserListContents* pair = parsePair(p);
+	struct ParserListContents* pair = parse_pair(p);
 	if (pair != NULL) {
 		struct ParserValue* ret = kmalloc(sizeof(struct ParserValue));
 		ret->data = pair;
 		ret->t = P_PAIR;
 		return ret;
 	}
-	struct ParserListContents* quoteList = parseQuoteList(p);
-	if (quoteList != NULL) {
+	struct ParserListContents* quote_list = parse_quote_list(p);
+	if (quote_list != NULL) {
 		struct ParserValue* ret = kmalloc(sizeof(struct ParserValue));
-		ret->data = quoteList;
+		ret->data = quote_list;
 		ret->t = P_QUOTE_LIST;
 		return ret;
 	}
-	struct ParserSpan* quoteSymbol = parseQuoteSymbol(p);
-	if (quoteSymbol != NULL){
+	struct ParserSpan* quote_symbol = parse_quote_symbol(p);
+	if (quote_symbol != NULL){
 		struct ParserValue* ret = kmalloc(sizeof(struct ParserValue));
-		ret->data = quoteSymbol;
+		ret->data = quote_symbol;
 		ret->t = P_QUOTE_SYMBOL;
 		return ret;
 	}
-	struct ParserSpan* number = parseNumber(p);
+	struct ParserSpan* number = parse_number(p);
 	if (number != NULL) {
 		struct ParserValue* ret = kmalloc(sizeof(struct ParserValue));
 		ret->data = number;
 		ret->t = P_INT;
 		return ret;
 	}
-	struct ParserSpan* symbol = parseSymbol(p);
+	struct ParserSpan* symbol = parse_symbol(p);
 	if (symbol != NULL) {
 		struct ParserValue* ret = kmalloc(sizeof(struct ParserValue));
 		ret->data = symbol;
 		ret->t = P_SYMBOL;
 		return ret;
 	}
-	struct ParserSpan* path = parsePath(p);
+	struct ParserSpan* path = parse_path(p);
 	if (path != NULL) {
 		struct ParserValue* ret = kmalloc(sizeof(struct ParserValue));
 		ret->data = path;
 		ret->t = P_PATH;
 		return ret;
 	}	
-	struct ParserSpan* string = parseString(p);
+	struct ParserSpan* string = parse_string(p);
 	if (string != NULL) {
 		struct ParserValue* ret = kmalloc(sizeof(struct ParserValue));
 		ret->data = string;
@@ -238,9 +238,9 @@ struct ParserValue* parseValue(const i8** p) {
 	return NULL;
 }
 
-struct ParserListContents* parseListContents(const i8** p) {
+struct ParserListContents* parse_list_contents(const i8** p) {
 	const i8* start = *p;
-	struct ParserValue* value = parseValue(p);
+	struct ParserValue* value = parse_value(p);
 	if (value == NULL) {
 		*p = start;
 		return NULL;
@@ -248,7 +248,7 @@ struct ParserListContents* parseListContents(const i8** p) {
 	struct ParserListContents* ret = kmalloc(sizeof(struct ParserListContents));
 	ret->v = value;
 	start = *p;
-	ret->n = parseListContents(p);
+	ret->n = parse_list_contents(p);
 	if (ret->n == NULL) {
 		*p = start;
 	}
@@ -256,7 +256,7 @@ struct ParserListContents* parseListContents(const i8** p) {
 }
 
 struct ParserListContents* parse(const i8** p) {
-	struct ParserListContents* ret = parseListContents(p);
+	struct ParserListContents* ret = parse_list_contents(p);
 	if (ret == NULL) {
 		printf("PANIC: Failed to parse list contents\n");
 		halt();

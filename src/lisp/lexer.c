@@ -71,11 +71,11 @@ switch_label:
 		}
 		if (is_valid_symbol_start_char(*(*ptr+1))) {
 			(*ptr)++;
-			const i8* symbolStart = *ptr;
+			const i8* symbol_start = *ptr;
 			while (is_valid_symbol_char(*(*ptr+1))) {
 				(*ptr)++;
 			}
-			struct LexerToken ret = {QUOTE_SYMBOL, symbolStart, ++*ptr};
+			struct LexerToken ret = {QUOTE_SYMBOL, symbol_start, ++*ptr};
 			return ret;
 		}
 		break;
@@ -85,29 +85,29 @@ switch_label:
 		goto switch_label;
 	case '"':
 	{
-		const i8* stringStart = *ptr;
+		const i8* string_start = *ptr;
 		do {
 			(*ptr)++;
 		} while (**ptr != '"');
-		struct LexerToken ret = {STRING, stringStart, ++*ptr};
+		struct LexerToken ret = {STRING, string_start, ++*ptr};
 		return ret;
 	}
 	default:
 	{
 		if (is_digit(**ptr)) {
-			const i8* digitStart = *ptr;
+			const i8* digit_start = *ptr;
 			while (is_digit(*(*ptr+1))) {
 				(*ptr)++;
 			}
-			struct LexerToken ret = {INT, digitStart, ++*ptr};
+			struct LexerToken ret = {INT, digit_start, ++*ptr};
 			return ret;
 		}
 		if (is_valid_symbol_start_char(**ptr)) {
-			const i8* symbolStart = *ptr;
+			const i8* symbol_start = *ptr;
 			while (is_valid_symbol_char(*(*ptr+1))) {
 				(*ptr)++;
 			}
-			struct LexerToken ret = {SYMBOL, symbolStart, ++*ptr};
+			struct LexerToken ret = {SYMBOL, symbol_start, ++*ptr};
 			return ret;
 		}
 		// INVALID!

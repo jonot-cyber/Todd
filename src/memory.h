@@ -40,17 +40,17 @@ void* kmalloc_z(u32);
 /**
    Allocate page-aligned memory in the kernel
  */
-void* kmallocAligned(u32);
+void* kmalloc_a(u32);
 
 /**
    Allocate memory in the kernel, returning pysical address
  */
-void* kmallocPhysical(u32,u32*);
+void* kmalloc_p(u32,u32*);
 
 /**
    Allocate page-aligned memory in the kernel, returning physical address
  */
-void* kmallocAlignedPhysical(u32, u32*);
+void* kmalloc_ap(u32, u32*);
 
 /**
    Free memory allocated in the kernel

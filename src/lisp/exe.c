@@ -6,9 +6,7 @@
 #include "../string.h"
 #include "scope.h"
 
-struct ASTNode* execNode(struct ASTNode* n);
-
-struct ASTNode* convertValue(struct ParserValue* v) {
+struct ASTNode* convert_value(struct ParserValue* v) {
 	if (v == NULL) {
 		return NULL;
 	}
@@ -32,7 +30,7 @@ struct ASTNode* convertValue(struct ParserValue* v) {
 		struct ASTNode* node = ret;
 		while (lc) {
 			node->type = AST_QUOTE_PAIR;
-			node->data.pair.p1 = convertValue(lc->v);
+			node->data.pair.p1 = convert_value(lc->v);
 			if (lc->n) {
 				node->data.pair.p2 = kmalloc_z(sizeof(struct ASTNode));
 			}
@@ -48,7 +46,7 @@ struct ASTNode* convertValue(struct ParserValue* v) {
 		struct ASTNode* node = ret;
 		while (lc) {
 			node->type = AST_PAIR;
-			node->data.pair.p1 = convertValue(lc->v);
+			node->data.pair.p1 = convert_value(lc->v);
 			if (lc->n) {
 				node->data.pair.p2 = kmalloc(sizeof(struct ASTNode));
 				memset(node->data.pair.p2, 0, sizeof(struct ASTNode));
@@ -79,58 +77,54 @@ struct ASTNode* convertValue(struct ParserValue* v) {
 		break;
 	}
 	default:
-		printf("Unknown type: %d\n", (u32)v->t);
-		halt();
+		assert(false, "convert_value: Unknown type");
 		break;
 	}
 	return ret;
 }
 
-struct ASTNode* convertList(struct ParserListContents* list) {
+struct ASTNode* convert_list(struct ParserListContents* list) {
 	if (list == NULL) {
 		return NULL;
 	}
 	struct ASTNode* ret = kmalloc(sizeof(struct ASTNode));
 	ret->type = AST_PAIR;
-	ret->data.pair.p1 = convertValue(list->v);
-	ret->data.pair.p2 = convertList(list->n);
+	ret->data.pair.p1 = convert_value(list->v);
+	ret->data.pair.p2 = convert_list(list->n);
 	return ret;
 }
 
 void output(struct ASTNode*);
 
-struct ASTNode* execFunction(struct ASTNode* n, struct Scope* scope) {
-	struct ASTNode* symbol = n->data.pair.p1;
-	struct ASTNode* args = n->data.pair.p2;
-	struct ScopeEntry* entry = scope_lookup(scope, symbol->data.span);
-	assert(entry != NULL, "execFunction: Function not found");
-	if (entry->method) {
-		// Builtin method
-		return entry->method(args, scope);
-	} else if (entry->params) {
-		scope_in(scope);
-		struct ASTNode* param_ptr = entry->params;
-		struct ASTNode* arg_ptr = args;
-		while (param_ptr) {
-			struct ASTNode* param = param_ptr->data.pair.p1;
-			assert(param->type == AST_SYMBOL, "execFunction: Parameter name isn't a symbol");
-			struct ASTNode* arg_result = exec_node(scope, arg_ptr->data.pair.p1);
-			struct ScopeEntry* new_entry = kmalloc(sizeof(struct ScopeEntry));
-			new_entry->node = arg_result;
-			new_entry->method = NULL;
-			new_entry->params = NULL;
-			new_entry->level = 0;
-			new_entry->name = (i8*)param->data.span;
-			scope_add(scope, new_entry);
-			param_ptr = param_ptr->data.pair.p2;
-			arg_ptr = arg_ptr->data.pair.p2;
-		}
-		struct ASTNode* ret = exec_node(scope, entry->node);
-		scope_out(scope);
+struct ASTNode* exec_function(struct ASTNode* method, struct ASTNode* args, struct Scope* scope) {
+	assert(method->type == AST_METHOD, "exec_function: Not a symbol name");
+
+	// Call a method implemented in C
+	if (method->data.method.method) {
+		struct ASTNode* ret =  method->data.method.method(args, scope);
 		return ret;
 	}
-	assert(false, "execFunction: Not a method");
-	return NULL;
+	scope_in(scope);
+	// A pointer to the parameters
+	struct ASTNode* param_ptr = method->data.method.params;
+	struct ASTNode* arg_ptr = args;
+	// Map the arguments to the parameters
+	while (param_ptr) {
+		struct ASTNode* param = param_ptr->data.pair.p1;
+		assert(param->type == AST_SYMBOL, "exec_function: Parameter name isn't a symbol");
+		struct ASTNode* arg_result = exec_node(scope, arg_ptr->data.pair.p1);
+		struct ScopeEntry new_entry;
+		memset(&new_entry, 0, sizeof(struct ScopeEntry));
+		new_entry.node = arg_result;
+		new_entry.name = (i8*)param->data.span;
+		scope_add(scope, &new_entry);
+		param_ptr = param_ptr->data.pair.p2;
+		arg_ptr = arg_ptr->data.pair.p2;
+	}
+	// Execute the function
+	struct ASTNode* ret = exec_node(scope, method->data.method.node);
+	scope_out(scope);
+	return ret;
 }
 
 struct ASTNode* exec_node(struct Scope* scope, struct ASTNode* n) {
@@ -144,9 +138,20 @@ struct ASTNode* exec_node(struct Scope* scope, struct ASTNode* n) {
 		return n;
 	case AST_PAIR:
 	{
-		struct ASTNode* p1 = n->data.pair.p1;
-		assert(p1->type == AST_SYMBOL, "exec_node: Not a function");
-		return execFunction(n, scope);
+		struct ASTNode* first_node = exec_node(scope, n->data.pair.p1);
+		if (first_node->type == AST_METHOD) {
+			return exec_function(first_node, n->data.pair.p2, scope);
+		}
+		/* We don't want to evaluate a list and its children *
+		 if we don't need to. For example, see this code:
+		 (define (id x) x) If we weren't lazily evaluating,
+		 this code wouldn't work. It would try to evaluate the
+		 id method before calling define. This would fail,
+		 since the id method doesn't exist until we create
+		 it. Lazy evaluation makes sure constructs like this
+		 work. Also helps with performace.
+		 */
+		return n;
 	}
 	case AST_SYMBOL:
 	{
@@ -157,11 +162,13 @@ struct ASTNode* exec_node(struct Scope* scope, struct ASTNode* n) {
 		}
 		struct ScopeEntry* r = scope_lookup(scope, n->data.span);
 		assert(r != NULL, "exec_node: unknown symbol");
-		if (r->method != NULL || r->params != NULL) {
-			// Just return methods directly;
-			return n;
-		}
-		return exec_node(scope, r->node);
+		struct ASTNode* res = exec_node(scope, r->node);
+		return res;
+		break;
+	}
+	case AST_METHOD:
+	{
+		return n;
 		break;
 	}
 	default:
@@ -218,7 +225,7 @@ void output(struct ASTNode* n) {
 }
 
 void scope_exec(struct Scope* scope, struct ParserListContents* l) {
-	struct ASTNode* c = convertList(l);
+	struct ASTNode* c = convert_list(l);
 	while (c) {
 		struct ASTNode* res = exec_node(scope, c->data.pair.p1);
 		output(res);

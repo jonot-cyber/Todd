@@ -3,7 +3,7 @@
 
 #include "common.h"
 
-volatile extern u32 ticks;
+extern volatile u32 ticks;
 
 void timer_init(u32);
 

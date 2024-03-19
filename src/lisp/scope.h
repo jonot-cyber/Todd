@@ -11,9 +11,7 @@ struct Scope;
 
 struct ScopeEntry {
 	i8* name;
-	struct ASTNode* (*method)(struct ASTNode*, struct Scope*);
 	struct ASTNode* node;
-	struct ASTNode* params;
 	u32 level;
 	struct ScopeEntry* next;
 };

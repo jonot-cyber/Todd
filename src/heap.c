@@ -3,9 +3,13 @@
 #include "memory.h"
 #include "task.h"
 
+static u32 used_bytes = 0;
+
 static struct HeapHeader* heap_start;
 
 void heap_init(void* start_addr, u32 size) {
+	// Keeps track of how many bytes have been used
+	used_bytes = 0;
 	heap_start = (struct HeapHeader*)start_addr;
 
 	// Create a heap region that covers all available memory
@@ -17,7 +21,6 @@ void heap_init(void* start_addr, u32 size) {
 	full_header->is_last = true;
 }
 
-#include "io.h"
 bool could_fit_page_table(struct HeapHeader* h, u32 to_alloc) {
 	u32 new_start_point = (u32)h + to_alloc;
 	u32 next_boundry = (new_start_point + 0x1000) & 0xfffff000;
@@ -55,6 +58,7 @@ void* heap_malloc(u32 size, bool align) {
 		// Simple case: If our hole is the exact size we need,
 		// fill it
 		if (h->size == new_full_size) {
+			used_bytes += size;
 			h->is_hole = false;
 			return (void*)((u32)h + sizeof(struct HeapHeader));
 		}
@@ -94,8 +98,10 @@ void* heap_malloc(u32 size, bool align) {
 			new_a->is_last = false;
 			new_a->size = full_size;
 			assert(new_a->size != 0, "heap_malloc: Invalid heap block");
+			used_bytes += size;
 			return (void*)((u32)new_a + sizeof(struct HeapHeader));
 		}
+		used_bytes += size;
 		return (void*)((u32)h + sizeof(struct HeapHeader));
 	correct_exit:
 		if (h->is_last) {
@@ -172,8 +178,14 @@ bool merge_right(struct HeapHeader* t) {
  */
 void heap_free(void* ptr) {
 	struct HeapHeader* h = (struct HeapHeader*)((u32)ptr - sizeof(struct HeapHeader));
+	u32 block_size = h->size - sizeof(struct HeapHeader) - sizeof(struct HeapFooter);
+	used_bytes -= block_size;
 	h->is_hole = true;
 	// Merge with adjacent holes
 	merge_left(h);
 	merge_right(h);
+}
+
+u32 heap_get_used() {
+	return used_bytes;
 }

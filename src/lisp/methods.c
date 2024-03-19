@@ -5,7 +5,6 @@
 #include "io.h"
 #include "scope.h"
 #include "string.h"
-#include "task.h"
 
 const i8* TRUE_SYMBOL = "#t";
 const i8* FALSE_SYMBOL = "#f";
@@ -75,15 +74,15 @@ struct ASTNode* method_div(struct ASTNode* n, struct Scope* scope) {
 
 struct ASTNode* method_if(struct ASTNode* n, struct Scope* scope) {
 	struct ASTNode* condition = n->data.pair.p1;
-	struct ASTNode* ifTrue = n->data.pair.p2->data.pair.p1;
-	struct ASTNode* ifFalse = n->data.pair.p2->data.pair.p2->data.pair.p1;
+	struct ASTNode* if_true = n->data.pair.p2->data.pair.p1;
+	struct ASTNode* if_false = n->data.pair.p2->data.pair.p2->data.pair.p1;
 
-	struct ASTNode* conditionRes = exec_node(scope, condition);
-	assert(conditionRes->type == AST_SYMBOL, "methods_if: Not a boolean");
-	if (strcmp("#t", conditionRes->data.span) == 0) {
-		return exec_node(scope, ifTrue);
+	struct ASTNode* condition_res = exec_node(scope, condition);
+	assert(condition_res->type == AST_SYMBOL, "methods_if: Not a boolean");
+	if (strcmp("#t", condition_res->data.span) == 0) {
+		return exec_node(scope, if_true);
 	} else {
-		return exec_node(scope, ifFalse);
+		return exec_node(scope, if_false);
 	}
 }
 
@@ -115,32 +114,29 @@ struct ASTNode* method_define(struct ASTNode* n, struct Scope* scope) {
 	if (p1->type == AST_SYMBOL) {
 		struct ASTNode* ret = exec_node(scope, p2);
 		u32 len = strlen(p1->data.span);
-		i8* buf = kmalloc(len);
+		i8* buf = kmalloc(len+1);
 		memcpy(p1->data.span, buf, len);
 		buf[len] = '\0';
-		struct ScopeEntry* new_entry = kmalloc(sizeof(struct ScopeEntry));
+		struct ScopeEntry* new_entry = kmalloc_z(sizeof(struct ScopeEntry));
 		new_entry->level = 0;
-		new_entry->method = NULL;
 		new_entry->name = buf;
-		new_entry->next = NULL;
 		new_entry->node = ret;
-		new_entry->params = NULL;
 		scope_add(scope, new_entry);
 		return ret;
 	} else if (p1->type == AST_PAIR) {
 		struct ASTNode* name = p1->data.pair.p1;
 		struct ASTNode* params = p1->data.pair.p2;
 		assert(name->type == AST_SYMBOL, "methods_define: Function name must be a symbol");
+		struct ASTNode* exe = kmalloc_z(sizeof(struct ASTNode));
+		exe->type = AST_METHOD;
+		exe->data.method.params = params;
+		exe->data.method.node = p2;
 		u32 name_len = strlen(name->data.span);
-		i8* buf = kmalloc(name_len + 1);
+		i8* buf = kmalloc_z(name_len + 1);
 		memcpy(name->data.span, buf, name_len);
-		buf[name_len] = '\0';
-		struct ScopeEntry* new_entry = kmalloc(sizeof(struct ScopeEntry));
+		struct ScopeEntry* new_entry = kmalloc_z(sizeof(struct ScopeEntry));
 		new_entry->name = buf;
-		new_entry->method = NULL;
-		new_entry->node = p2;
-		new_entry->params = params;
-		new_entry->next = NULL;
+		new_entry->node = exe;
 		scope_add(scope, new_entry);
 		kfree(new_entry);
 		return NULL;
@@ -151,6 +147,7 @@ struct ASTNode* method_define(struct ASTNode* n, struct Scope* scope) {
 }
 
 struct ASTNode* method_display(struct ASTNode* args, struct Scope* scope) {
+	UNUSED(scope);
 	assert(args->type == AST_PAIR, "method_display: weird arguments");
 	struct ASTNode* param = args->data.pair.p1;
 	assert(param->type == AST_STRING, "method_display: not a string");
@@ -216,6 +213,20 @@ struct ASTNode* method_not(struct ASTNode* args, struct Scope* scope) {
 	return ret;
 }
 
-struct ASTNode* method_call_cc(struct ASTNode* args, struct Scope* scope) {
-	return NULL;
+/*
+  ((lambda (x) (* x 2)) 3) ; => 6
+ */
+struct ASTNode* method_lambda(struct ASTNode* args, struct Scope* scope) {
+	UNUSED(scope);
+	assert(args->type == AST_PAIR, "method_lambda: Invalid syntax");
+	struct ASTNode* params = args->data.pair.p1;
+	assert(params->type == AST_PAIR, "method_lambda: Invalid syntax [b]");
+	assert(args->data.pair.p2->type == AST_PAIR, "method_lambda: Invalid syntax [c]");
+	struct ASTNode* body = args->data.pair.p2->data.pair.p1;
+
+	struct ASTNode* ret = kmalloc_z(sizeof(struct ASTNode));
+	ret->type = AST_METHOD;
+	ret->data.method.params = params;
+	ret->data.method.node = body;
+	return ret;
 }

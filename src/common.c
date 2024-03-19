@@ -46,6 +46,7 @@ void memcpy(const void* src, void* dst, u32 size) {
 }
 
 void halt() {
+	asm volatile("cli");
 	while (true); // jail
 }
 

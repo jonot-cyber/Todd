@@ -2,18 +2,9 @@
 #define ISR_H
 
 #include "idt.h"
-#include "common.h"
 
 typedef void (*Handler)(struct Registers);
 
-/**
-   A table of function pointers to interrupt handlers
- */
-extern Handler handlers[256];
-
-/**
-   IRQ numbers are offset.
- */
 enum IRQS {
 	IRQ0 = 32,
 	IRQ1 = 33,
@@ -33,9 +24,7 @@ enum IRQS {
 	IRQ15 = 47,
 };
 
-/**
-   Create a new interrupt handler
- */
 void register_interrupt_handler(u8 n, Handler handler);
+Handler get_handler(u8 n);
 
 #endif

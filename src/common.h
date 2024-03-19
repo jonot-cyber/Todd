@@ -1,6 +1,9 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+// Used to stop compiler warnings
+#define UNUSED(x) (void)(x)
+
 // Consistency types
 
 // Unsigned 32 bit integer

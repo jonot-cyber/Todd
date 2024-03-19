@@ -168,24 +168,24 @@ i8 keyboard_scan() {
 	if (ret >= 0x80) {
 		// Released
 		i8 k = SCAN_SET[ret - 0x80];
-		if (!keys[k]) {
+		if (!keys[(u32)k]) {
 			return '\0';
 		}
-		keys[k] = false;
+		keys[(u32)k] = false;
 		return -k;
 	} else {
 		i8 k = SCAN_SET[ret];
-		if (keys[k]) {
+		if (keys[(u32)k]) {
 			return '\0';
 		}
-		keys[k] = true;
+		keys[(u32)k] = true;
 		return k;
 	}
 	return '\0';
 }
 
 i8 translate_code(i8 in) {
-	if (!(keys[LSHIFT_CODE] || keys[RSHIFT_CODE])) {
+	if (!(keys[(u32)LSHIFT_CODE] || keys[(u32)RSHIFT_CODE])) {
 		return in;
 	}
 	if (in >= 'a' && in <= 'z') {
