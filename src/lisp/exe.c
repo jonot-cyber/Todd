@@ -6,11 +6,11 @@
 #include "../string.h"
 #include "scope.h"
 
-struct ASTNode* convert_value(struct ParserValue* v) {
+struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 	if (v == NULL) {
 		return NULL;
 	}
-	struct ASTNode* ret = kmalloc(sizeof(struct ASTNode));
+	struct ASTNode* ret = scope_kmalloc(scope);
 	switch (v->t) {
 	case P_INT:
 	{
@@ -30,9 +30,9 @@ struct ASTNode* convert_value(struct ParserValue* v) {
 		struct ASTNode* node = ret;
 		while (lc) {
 			node->type = AST_QUOTE_PAIR;
-			node->data.pair.p1 = convert_value(lc->v);
+			node->data.pair.p1 = convert_value(scope, lc->v);
 			if (lc->n) {
-				node->data.pair.p2 = kmalloc_z(sizeof(struct ASTNode));
+				node->data.pair.p2 = scope_kmalloc(scope);
 			}
 			node = node->data.pair.p2;
 			lc = lc->n;
@@ -46,10 +46,9 @@ struct ASTNode* convert_value(struct ParserValue* v) {
 		struct ASTNode* node = ret;
 		while (lc) {
 			node->type = AST_PAIR;
-			node->data.pair.p1 = convert_value(lc->v);
+			node->data.pair.p1 = convert_value(scope, lc->v);
 			if (lc->n) {
-				node->data.pair.p2 = kmalloc(sizeof(struct ASTNode));
-				memset(node->data.pair.p2, 0, sizeof(struct ASTNode));
+				node->data.pair.p2 = scope_kmalloc(scope);
 			}
 			node = node->data.pair.p2;
 			lc = lc->n;
@@ -80,21 +79,21 @@ struct ASTNode* convert_value(struct ParserValue* v) {
 		assert(false, "convert_value: Unknown type");
 		break;
 	}
+	kfree(v);
 	return ret;
 }
 
-struct ASTNode* convert_list(struct ParserListContents* list) {
+struct ASTNode* convert_list(struct Scope* scope, struct ParserListContents* list) {
 	if (list == NULL) {
 		return NULL;
 	}
 	struct ASTNode* ret = kmalloc(sizeof(struct ASTNode));
 	ret->type = AST_PAIR;
-	ret->data.pair.p1 = convert_value(list->v);
-	ret->data.pair.p2 = convert_list(list->n);
+	ret->data.pair.p1 = convert_value(scope, list->v);
+	ret->data.pair.p2 = convert_list(scope, list->n);
+	kfree(list);
 	return ret;
 }
-
-void output(struct ASTNode*);
 
 struct ASTNode* exec_function(struct ASTNode* method, struct ASTNode* args, struct Scope* scope) {
 	assert(method->type == AST_METHOD, "exec_function: Not a symbol name");
@@ -224,13 +223,28 @@ void output(struct ASTNode* n) {
 	}
 }
 
+/* Recursively add all nodes from the parse to the garbage collection array */
+void ensure_parsed_nodes_are_garbage_collected(struct Scope* scope, struct ASTNode* n) {
+	if (n == NULL) {
+		return;
+	}
+	array_push(&scope->nodes, &n);
+	/* If our element has children, we need to run ourself recursively */
+	if (n->type == AST_PAIR || n->type == AST_QUOTE_PAIR) {
+		ensure_parsed_nodes_are_garbage_collected(scope, n->data.pair.p1);
+		ensure_parsed_nodes_are_garbage_collected(scope, n->data.pair.p2);
+	}
+}
+
 void scope_exec(struct Scope* scope, struct ParserListContents* l) {
-	struct ASTNode* c = convert_list(l);
+	struct ASTNode* c = convert_list(scope, l);
+	ensure_parsed_nodes_are_garbage_collected(scope, c);
 	while (c) {
 		struct ASTNode* res = exec_node(scope, c->data.pair.p1);
 		output(res);
 		write_char('\n');
 		c = c->data.pair.p2;
 	}
+	scope_gc(scope);
 	return;
 }

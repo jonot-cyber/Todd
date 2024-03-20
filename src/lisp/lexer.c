@@ -2,7 +2,6 @@
 
 #include "../io.h"
 #include "../memory.h"
-#include "lex_test.h"
 
 bool is_alpha(i8 c) {
 	return c >= 'A' && c <= 'z';

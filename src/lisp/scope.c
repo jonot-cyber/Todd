@@ -7,6 +7,13 @@
 
 #define SCOPE_TABLES 512
 
+#include "io.h"
+struct ASTNode* scope_kmalloc(struct Scope* scope) {
+	struct ASTNode* ret = kmalloc_z(sizeof(struct ASTNode));
+	array_push(&scope->nodes, &ret);
+	return ret;
+}
+
 u32 pjw_hash(u8* data, u32 len) {
 	u32 ret = 0;
 	for (u32 i = 0; i < len; i++) {
@@ -26,7 +33,7 @@ void scope_add_builtin(struct Scope* scope, struct ASTNode* (*fn)(struct ASTNode
 	// Reset all the values so we don't forget any
 	memset(&tmp, 0, sizeof(struct ScopeEntry));
 
-	struct ASTNode* method_node = kmalloc_z(sizeof(struct ASTNode));
+	struct ASTNode* method_node = scope_kmalloc(scope);
 	method_node->type = AST_METHOD;
 	method_node->data.method.method = fn;
 
@@ -36,6 +43,9 @@ void scope_add_builtin(struct Scope* scope, struct ASTNode* (*fn)(struct ASTNode
 }
 
 void scope_init(struct Scope* scope) {
+	/* Initialize an array of all the nodes in the scope */
+	array_init(&scope->nodes, 4);
+
 	scope->data = kmalloc_z(SCOPE_TABLES * sizeof(struct ScopeEntry*));
 
 	scope_add_builtin(scope, method_add, "+");
@@ -140,4 +150,52 @@ struct ScopeEntry* scope_lookup(struct Scope* scope, i8 const* name) {
 		ptr = ptr->next;
 	}
 	return ptr;
+}
+
+void scope_gc_mark_node(struct ASTNode* node) {
+	if (!node) {
+		return;
+	}
+	node->gc_mark = true;
+	/* We don't need to recurse here */
+	if (node->type != AST_PAIR && node->type != AST_QUOTE_PAIR) {
+		return;
+	}
+	scope_gc_mark_node(node->data.pair.p1);
+	scope_gc_mark_node(node->data.pair.p1);
+}
+
+void scope_gc(struct Scope* scope) {
+	/* Mark */
+	for (u32 i = 0; i < SCOPE_TABLES; i++) {
+		struct ScopeEntry* ptr = scope->data[i];
+		while (ptr) {
+			scope_gc_mark_node(ptr->node);
+			ptr = ptr->next;
+		}
+	}
+	/* Sweep */
+	struct ASTNode** nodes_arr = scope->nodes.data;
+	for (u32 i = 0; i < scope->nodes.size; i++) {
+		/* Get pointer to the node */
+		struct ASTNode* ptr = nodes_arr[i];
+		assert(ptr != NULL, "scope_gc: null pointer in sweep");
+		/* If a pointer hasn't been marked, we should be able to free it */
+		if (!ptr->gc_mark) {
+			/* If we have a span, free it */
+			if (ptr->type == AST_SYMBOL
+			    || ptr->type == AST_QUOTE_SYMBOL
+			    || ptr->type == AST_PATH
+			    || ptr->type == AST_STRING) {
+				kfree((void*)ptr->data.span);
+			}
+			array_remove(&scope->nodes, i);
+			i--;
+			kfree(ptr);
+			continue;
+		}
+		/* Reset the mark for the next run */
+		ptr->gc_mark = false;
+	}
+	return;
 }

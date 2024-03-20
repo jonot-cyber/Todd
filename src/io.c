@@ -145,11 +145,24 @@ void printf(const i8* str, ...) {
 				write_bin(v);
 				break;
 			}
-			case 'd':
+			case 'u':
 			{
 				u32 v = *(u32*)(stack_ptr + offset);
 				write_dec(v);
 				offset += 4;
+				break;
+			}
+			case 'd':
+			{
+				u32 v = *(u32*)(stack_ptr + offset);
+				/* Handle negative numbers with two's complement */
+				if (v & 0x8000000) {
+					v = ~v;
+					v++;
+					write_char('-');
+				}
+				offset += 4;
+				write_dec(v);
 				break;
 			}
 			case 'x':

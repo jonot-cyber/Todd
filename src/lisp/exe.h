@@ -39,10 +39,14 @@ struct ASTNode {
 		const i8* span;
 		u32 num;
 	} data;
+	/* Whether the node can be found from the root in the gc sweep */
+	bool gc_mark;
 };
 
 struct ASTNode* exec_node(struct Scope*, struct ASTNode*);
 
 void scope_exec(struct Scope*, struct ParserListContents*);
+
+void output(struct ASTNode*);
 
 #endif
