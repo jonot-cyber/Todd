@@ -157,12 +157,13 @@ void scope_gc_mark_node(struct ASTNode* node) {
 		return;
 	}
 	node->gc_mark = true;
-	/* We don't need to recurse here */
-	if (node->type != AST_PAIR && node->type != AST_QUOTE_PAIR) {
-		return;
+	if (node->type == AST_PAIR || node->type == AST_QUOTE_PAIR) {
+		scope_gc_mark_node(node->data.pair.p1);
+		scope_gc_mark_node(node->data.pair.p2);
+	} else if (node->type == AST_METHOD) {
+		scope_gc_mark_node(node->data.method.node);
+		scope_gc_mark_node(node->data.method.params);
 	}
-	scope_gc_mark_node(node->data.pair.p1);
-	scope_gc_mark_node(node->data.pair.p1);
 }
 
 void scope_gc(struct Scope* scope) {

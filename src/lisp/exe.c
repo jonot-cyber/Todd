@@ -110,6 +110,7 @@ struct ASTNode* exec_function(struct ASTNode* method, struct ASTNode* args, stru
 	// Map the arguments to the parameters
 	while (param_ptr) {
 		struct ASTNode* param = param_ptr->data.pair.p1;
+		assert(param != NULL, "exec_function: Null parameter");
 		assert(param->type == AST_SYMBOL, "exec_function: Parameter name isn't a symbol");
 		struct ASTNode* arg_result = exec_node(scope, arg_ptr->data.pair.p1);
 		struct ScopeEntry new_entry;
@@ -238,7 +239,6 @@ void ensure_parsed_nodes_are_garbage_collected(struct Scope* scope, struct ASTNo
 
 void scope_exec(struct Scope* scope, struct ParserListContents* l) {
 	struct ASTNode* c = convert_list(scope, l);
-	ensure_parsed_nodes_are_garbage_collected(scope, c);
 	while (c) {
 		struct ASTNode* res = exec_node(scope, c->data.pair.p1);
 		output(res);
