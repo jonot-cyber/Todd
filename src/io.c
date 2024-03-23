@@ -195,6 +195,7 @@ void printf(const i8* str, ...) {
 					i8 c = *(str + 3);
 					u8 v = hex2num(c);
 					foreground_color = v;
+					str += 2;
 					break;
 				}
 				case 'b':
@@ -202,6 +203,7 @@ void printf(const i8* str, ...) {
 					i8 c = *(str + 3);
 					u8 v = hex2num(c);
 					background_color = v;
+					str += 2;
 					break;
 				}
 				case 'r':
