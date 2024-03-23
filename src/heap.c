@@ -1,7 +1,6 @@
 #include "heap.h"
 
 #include "memory.h"
-#include "task.h"
 
 static u32 used_bytes = 0;
 
@@ -30,7 +29,6 @@ bool could_fit_page_table(struct HeapHeader* h, u32 to_alloc) {
 	return remaining_size >= size_needed;
 }
 
-#include "io.h"
 void* heap_malloc(u32 size, bool align) {
 	// Calculate how big of a hole we need, including the header
 	// and footer
@@ -177,7 +175,7 @@ bool merge_right(struct HeapHeader* t) {
 /**
    Free a memory region.
  */
-void heap_free(void* ptr) {
+u32 heap_free(void* ptr) {
 	struct HeapHeader* h = (struct HeapHeader*)((u32)ptr - sizeof(struct HeapHeader));
 	u32 block_size = h->size - sizeof(struct HeapHeader) - sizeof(struct HeapFooter);
 	used_bytes -= block_size;
@@ -185,6 +183,7 @@ void heap_free(void* ptr) {
 	// Merge with adjacent holes
 	merge_left(h);
 	merge_right(h);
+	return block_size;
 }
 
 u32 heap_get_used() {

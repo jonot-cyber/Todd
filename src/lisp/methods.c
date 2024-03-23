@@ -78,12 +78,8 @@ struct ASTNode* method_if(struct ASTNode* n, struct Scope* scope) {
 	struct ASTNode* if_false = n->data.pair.p2->data.pair.p2->data.pair.p1;
 
 	struct ASTNode* condition_res = exec_node(scope, condition);
-	assert(condition_res->type == AST_SYMBOL, "methods_if: Not a boolean");
-	if (strcmp("#t", condition_res->data.span) == 0) {
-		return exec_node(scope, if_true);
-	} else {
-		return exec_node(scope, if_false);
-	}
+	assert(condition_res->type == AST_INT, "methods_if: Not a boolean");
+	return exec_node(scope, condition_res->data.num ? if_true : if_false);
 }
 
 
@@ -94,16 +90,12 @@ struct ASTNode* method_eq(struct ASTNode* n, struct Scope* scope) {
 	p2 = exec_node(scope, p2);
 
 	struct ASTNode* ret = scope_kmalloc(scope);
-	ret->type = AST_SYMBOL;
+	ret->type = AST_INT;
 	if (p1->type != p2->type) {
-		ret->data.span = FALSE_SYMBOL;
+		ret->data.num = false;
 		return ret;
 	}
-	if (p1->data.num == p2->data.num) {
-		ret->data.span = TRUE_SYMBOL;
-	} else {
-		ret->data.span = FALSE_SYMBOL;
-	}
+	ret->data.num = p1->data.num == p2->data.num;
 	return ret;
 }
 
@@ -162,17 +154,17 @@ struct ASTNode* method_and(struct ASTNode* args, struct Scope* scope) {
 	while (ptr) {
 		struct ASTNode* arg = ptr->data.pair.p1;
 		arg = exec_node(scope, arg);
-		if (strcmp(arg->data.span, "#f") == 0) {
+		if (!arg->data.num) {
 			struct ASTNode* ret = scope_kmalloc(scope);
-			ret->type = AST_SYMBOL;
-			ret->data.span = FALSE_SYMBOL;
+			ret->type = AST_INT;
+			ret->data.num = false;
 			return ret;
 		}
 		ptr = ptr->data.pair.p2;
 	}
 	struct ASTNode* ret = scope_kmalloc(scope);
-	ret->type = AST_SYMBOL;
-	ret->data.span = TRUE_SYMBOL;
+	ret->type = AST_INT;
+	ret->data.num = true;
 	return ret;
 }
 
@@ -182,17 +174,17 @@ struct ASTNode* method_or(struct ASTNode* args, struct Scope* scope) {
 	while (ptr) {
 		struct ASTNode* arg = ptr->data.pair.p1;
 		arg = exec_node(scope, arg);
-		if (strcmp(arg->data.span, "#t") == 0) {
+		if (arg->data.num) {
 			struct ASTNode* ret = scope_kmalloc(scope);
-			ret->type = AST_SYMBOL;
-			ret->data.span = TRUE_SYMBOL;
+			ret->type = AST_INT;
+			ret->data.num = true;
 			return ret;
 		}
 		ptr = ptr->data.pair.p2;
 	}
 	struct ASTNode* ret = scope_kmalloc(scope);
-	ret->type = AST_SYMBOL;
-	ret->data.span = FALSE_SYMBOL;
+	ret->type = AST_INT;
+	ret->data.num = false;
 	return ret;
 }
 
@@ -201,16 +193,9 @@ struct ASTNode* method_not(struct ASTNode* args, struct Scope* scope) {
 	struct ASTNode* ptr = args;
 	struct ASTNode* arg = exec_node(scope, ptr->data.pair.p1);
 	struct ASTNode* ret = scope_kmalloc(scope);
-	ret->type = AST_SYMBOL;
-	assert(arg->type == AST_SYMBOL, "method_not: Needs to be a boolean");
-	if (strcmp(arg->data.span, "#t") == 0) {
-		ret->data.span = FALSE_SYMBOL;
-	} else if (strcmp(arg->data.span, "#f") == 0) {
-		ret->data.span = TRUE_SYMBOL;
-	} else {
-		kfree(ret);
-		return NULL;
-	}
+	ret->type = AST_INT;
+	assert(arg->type == AST_INT, "method_not: Needs to be a boolean");
+	ret->data.num = !arg->data.num;
 	return ret;
 }
 

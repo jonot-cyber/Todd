@@ -34,8 +34,10 @@ void* heap_malloc(u32, bool);
 
 /**
    Free memory from the heap.
+
+   Returns the bytes that were freed
  */
-void heap_free(void*);
+u32 heap_free(void*);
 
 /**
    Get the amount of memory used in the heap
