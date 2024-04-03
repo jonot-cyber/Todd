@@ -60,6 +60,7 @@ void scope_init(struct Scope* scope) {
 	scope_add_builtin(scope, method_or, "or");
 	scope_add_builtin(scope, method_not, "not");
 	scope_add_builtin(scope, method_lambda, "lambda");
+	scope_add_builtin(scope, method_read, "read");
 }
 
 void scope_add(struct Scope* scope, struct ScopeEntry* entry) {
@@ -149,6 +150,8 @@ struct ScopeEntry* scope_lookup(struct Scope* scope, i8 const* name) {
 		}
 		ptr = ptr->next;
 	}
+	if (ptr)
+		assert(ptr->node != NULL, "scope_lookup: Returning a null value");
 	return ptr;
 }
 
@@ -183,6 +186,7 @@ void scope_gc(struct Scope* scope) {
 		assert(ptr != NULL, "scope_gc: null pointer in sweep");
 		/* If a pointer hasn't been marked, we should be able to free it */
 		if (!ptr->gc_mark) {
+			assert(ptr->type != AST_METHOD, "Methods shouldn't be freed right now");
 			/* If we have a span, free it */
 			if (ptr->type == AST_SYMBOL
 			    || ptr->type == AST_QUOTE_SYMBOL

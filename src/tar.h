@@ -25,6 +25,16 @@ struct TarHeader {
 	u8 data_ptr;
 } __attribute__((packed));
 
-void ustar_info(struct TarHeader* header);
+/* Represents the needed information of a file. Linked list */
+struct FSNode {
+	i8* name;
+	u32 file_size;
+	u8* data;
+	struct FSNode* next;
+};
+
+void load_ustar(struct TarHeader* header);
+
+extern struct FSNode* fs_root;
 
 #endif

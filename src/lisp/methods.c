@@ -5,9 +5,7 @@
 #include "io.h"
 #include "scope.h"
 #include "string.h"
-
-const i8* TRUE_SYMBOL = "#t";
-const i8* FALSE_SYMBOL = "#f";
+#include "tar.h"
 
 struct ASTNode* method_add(struct ASTNode* n, struct Scope* scope) {
 	struct ASTNode* ret = scope_kmalloc(scope);
@@ -215,4 +213,28 @@ struct ASTNode* method_lambda(struct ASTNode* args, struct Scope* scope) {
 	ret->data.method.params = params;
 	ret->data.method.node = body;
 	return ret;
+}
+
+struct ASTNode* method_read(struct ASTNode* args, struct Scope* scope) {
+	struct ASTNode* arg = args->data.pair.p1;
+	struct ASTNode* file_path = exec_node(scope, arg);
+	assert(file_path->type == AST_STRING, "must provide a file path");
+	struct FSNode* ptr = fs_root;
+	while (ptr != NULL) {
+		/* Found a match */
+		if (strcmp(ptr->name, file_path->data.span) == 0) {
+			i8* data = kmalloc(ptr->file_size + 1);
+			memcpy(ptr->data, data, ptr->file_size);
+			data[ptr->file_size] = '\0';
+			struct ASTNode* ret = scope_kmalloc(scope);
+			ret->type = AST_STRING;
+			ret->data.span = data;
+			return ret;
+		}
+		ptr = ptr->next;
+	}
+	struct ASTNode* fail_ret = scope_kmalloc(scope);
+	fail_ret->type = AST_INT;
+	fail_ret->data.num = 0;
+	return fail_ret;
 }

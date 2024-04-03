@@ -103,7 +103,7 @@ void check_modules(struct MultiBoot* mboot) {
 		const i8* name = module_ptr->string;
 		printf("[%d] %s\n", i + 1, name);
 		if (strcmp(name, "build/initrd.tar") == 0) {
-			ustar_info((struct TarHeader*)module_ptr->mod_start);
+			load_ustar((struct TarHeader*)module_ptr->mod_start);
 		}
 	}
 }

@@ -117,17 +117,14 @@ err:
 struct ParserSpan* parse_symbol(const i8** p) {
 	const i8* start = *p;
 	struct LexerToken token = lex(p);
-	struct ParserSpan* ret;
 	if (token.type != SYMBOL) {
-		goto err;
+		*p = start;
+		return NULL;
 	}
-	ret = kmalloc(sizeof(struct ParserSpan));
+	struct ParserSpan* ret = kmalloc(sizeof(struct ParserSpan));
 	ret->start = token.start;
 	ret->end = token.end;
 	return ret;
-err:
-	*p = start;
-	return NULL;
 }
 
 struct ParserSpan* parse_number(const i8** p) {
@@ -257,9 +254,6 @@ struct ParserListContents* parse_list_contents(const i8** p) {
 
 struct ParserListContents* parse(const i8** p) {
 	struct ParserListContents* ret = parse_list_contents(p);
-	if (ret == NULL) {
-		printf("PANIC: Failed to parse list contents\n");
-		halt();
-	}
+	assert(ret != NULL, "parse: Failed to parse list contents");
 	return ret;
 }

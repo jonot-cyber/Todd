@@ -2,6 +2,9 @@
 
 #include "string.h"
 #include "io.h"
+#include "memory.h"
+
+struct FSNode* fs_root = NULL;
 
 /* Read octal number from a buffer */
 u32 read_octal(u8* data, u32 len) {
@@ -13,22 +16,38 @@ u32 read_octal(u8* data, u32 len) {
 	return ret;
 }
 
-void ustar_info(struct TarHeader *header) {
-	printf("File Name: %s\n", header->file_name);
-	printf("File Mode: %s\n", header->file_mode);
-	printf("User ID: %d\n", read_octal(header->user_id, 8));
-	printf("Group ID: %d\n", read_octal(header->group_id, 8));
-	printf("File Size: %d\n", read_octal(header->file_size, 12));
-	printf("Modification Time: %d\n", read_octal(header->modification_time, 12));
-	printf("Checksum: %d\n", read_octal(header->checksum, 8));
-	printf("Type Flag: %c\n", header->type_flag);
-	printf("Link name: %s\n", header->link_name);
-	printf("UStar indicator: %s\n", header->ustar_indiator);
-	assert(strcmp_span((i8*)header->ustar_indiator, "ustar", 5) == 0, "ustar_info: Archive isn't ustar. Is it 1979?");
-	printf("UStar version: %s\n", header->ustar_version);
-	printf("User Name: %s\n", header->user_name);
-	printf("Group Name: %s\n", header->group_name);
-	printf("Device Major Number: %s\n", header->device_major_number);
-	printf("Device Minor Number: %s\n", header->device_minor_number);
-	printf("Filename Prefix: %s\n", header->filename_prefix);
+u32 round_size(u32 size) {
+	/* If we are right on the boundry, we can just return */
+	if (size % 512 == 0) {
+		return size;
+	}
+	return (size + 512) & 0xFFFFFE00;
+}
+
+void load_ustar(struct TarHeader* header) {
+	struct FSNode* node = NULL;
+	struct FSNode* first = NULL;
+	/* A blank header will mark the end of the file */
+	while (header->file_name[0] != '\0') {
+		struct FSNode* last = node;
+		node = kmalloc(sizeof(struct FSNode));
+		/* The firs one, meaing the root node */
+		if (last == NULL) {
+			first = node;
+		} else {
+			last->next = node;
+		}
+		u32 file_name_size = strlen((i8*)header->file_name);
+		i8* name = kmalloc(file_name_size + 1);
+		memcpy(header->file_name, name, file_name_size);
+		name[file_name_size + 1] = '\0';
+		node->name = name;
+		node->file_size = read_octal(header->file_size, 12);
+		node->data = &header->data_ptr;
+		node->next = NULL;
+		/* Align the file size to 512 bytes */
+		u32 file_size = round_size(node->file_size);
+		header = (struct TarHeader*)(node->data + file_size);
+	}
+	fs_root = first;
 }

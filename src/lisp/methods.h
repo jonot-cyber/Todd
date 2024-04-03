@@ -16,5 +16,6 @@ struct ASTNode* method_and(struct ASTNode*, struct Scope*);
 struct ASTNode* method_or(struct ASTNode*, struct Scope*);
 struct ASTNode* method_not(struct ASTNode*, struct Scope*);
 struct ASTNode* method_lambda(struct ASTNode*, struct Scope*);
+struct ASTNode* method_read(struct ASTNode*, struct Scope*);
 
 #endif

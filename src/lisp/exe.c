@@ -16,12 +16,14 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 	{
 		ret->type = AST_INT;
 		struct ParserSpan* span = v->data;
-		i8* buf = kmalloc(span->end - span->start + 1);
-		memcpy(span->start, buf, span->end - span->start);
-		buf[span->end - span->start] = '\0';
+		const i8* start = span->start;
+		const i8* end = span->end;
+		kfree(span);
+		i8* buf = kmalloc(end - start + 1);
+		memcpy(start, buf, end - start);
+		buf[end - start] = '\0';
 		ret->data.num = str_to_uint(buf);
 		kfree(buf);
-		kfree(span);
 		break;
 	}
 	case P_QUOTE_LIST:
@@ -76,9 +78,12 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 	case P_SYMBOL:
 	{
 		struct ParserSpan* span = v->data;
-		i8* buf = kmalloc(span->end - span->start + 1);
-		memcpy(span->start, buf, span->end - span->start);
-		buf[span->end - span->start] = '\0';
+		const i8* start = span->start;
+		const i8* end = span->end;
+		//kfree(v->data);
+		i8* buf = kmalloc(end - start + 1);
+		memcpy(start, buf, end - start);
+		buf[end - start] = '\0';
 		ret->type = AST_SYMBOL;
 		ret->data.span = buf;
 		break;
@@ -150,8 +155,8 @@ struct ASTNode* exec_node(struct Scope* scope, struct ASTNode* n) {
 	}
 	switch (n->type) {
 	case AST_INT:
-		return n;
 	case AST_QUOTE_PAIR:
+	case AST_STRING:
 		return n;
 	case AST_PAIR:
 	{
@@ -237,9 +242,7 @@ void output(struct ASTNode* n) {
 }
 
 void scope_exec(struct Scope* scope, struct ParserListContents* l) {
-	printf("BEGIN CONVERT LIST\n");
 	struct ASTNode* c = convert_list(scope, l);
-	printf("END CONVERT LIST\n");
 	while (c) {
 		struct ASTNode* res = exec_node(scope, c->data.pair.p1);
 		output(res);
