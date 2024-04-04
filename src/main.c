@@ -1,4 +1,5 @@
 #include "common.h"
+#include "elf.h"
 #include "gdt.h"
 #include "heap.h"
 #include "idt.h"
@@ -9,6 +10,7 @@
 #include "lisp/parser.h"
 #include "lisp/scope.h"
 #include "string.h"
+#include "syscall.h"
 #include "tar.h"
 #include "task.h"
 #include "timer.h"
@@ -135,6 +137,7 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	memory_init(mboot->mem_upper * 1024); // mem_upper is in kilobytes, convert to bytes
 	timer_init(1000);
 	keyboard_init();
+	syscall_init();
 
 	check_modules(mboot);
 

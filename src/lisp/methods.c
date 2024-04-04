@@ -1,5 +1,6 @@
 #include "methods.h"
 
+#include "../elf.h"
 #include "exe.h"
 #include "memory.h"
 #include "io.h"
@@ -297,10 +298,11 @@ struct ASTNode* method_ne(struct ASTNode* args, struct Scope* scope) {
 }
 
 struct ASTNode* method_lines(struct ASTNode* args, struct Scope* scope) {
+	/* TODO: Finish this method */
 	struct ASTNode* str = exec_node(scope, args->data.pair.p1);
 	assert(str->type == AST_STRING, "method_lines: Invalid argument");
-	i8* start_ptr = str->data.span;
-	i8* end_ptr = str->data.span;
+	i8* start_ptr = (i8*)str->data.span;
+	i8* end_ptr = (i8*)str->data.span;
 	while (true) {
 		if (*end_ptr == '\0') {
 			break;
@@ -312,4 +314,24 @@ struct ASTNode* method_lines(struct ASTNode* args, struct Scope* scope) {
 		}
 		end_ptr++;
 	}
+	return NULL;
+}
+
+struct ASTNode* method_exec(struct ASTNode* args, struct Scope* scope) {
+	struct ASTNode* arg = args->data.pair.p1;
+	struct ASTNode* file_path = exec_node(scope, arg);
+	assert(file_path->type == AST_STRING, "must provide a file path");
+	struct FSNode* ptr = fs_root;
+	struct FSNode* find_res = tar_find_file(ptr, file_path->data.span);
+	if (find_res == NULL) {
+		struct ASTNode* fail_ret = scope_kmalloc(scope);
+		fail_ret->type = AST_INT;
+		fail_ret->data.num = 1;
+		return fail_ret;
+	}
+	elf_load(ptr->data);
+	struct ASTNode* ret = scope_kmalloc(scope);
+	ret->type = AST_INT;
+	ret->data.num = 0;
+	return ret;
 }

@@ -26,4 +26,6 @@ struct ASTNode* method_ne(struct ASTNode*, struct Scope*);
 
 struct ASTNode* method_lines(struct ASTNode*, struct Scope*);
 
+struct ASTNode* method_exec(struct ASTNode*, struct Scope*);
+
 #endif
