@@ -9,7 +9,7 @@ struct FSNode* fs_root = NULL;
 /* Read octal number from a buffer */
 u32 read_octal(u8* data, u32 len) {
 	u32 ret = 0;
-	for (u32 i = 0; i < len; i++) {
+	for (u32 i = 0; i < len - 1; i++) {
 		ret *= 8;
 		ret += data[i] - '0';
 	}
