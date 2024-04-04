@@ -51,3 +51,13 @@ void load_ustar(struct TarHeader* header) {
 	}
 	fs_root = first;
 }
+
+struct FSNode* tar_find_file(struct FSNode* root, i8 const* const name) {
+	while (root) {
+		if (strcmp(root->name, name) == 0) {
+			return root;
+		}
+		root = root->next;
+	}
+	return NULL;
+}

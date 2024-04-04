@@ -35,6 +35,8 @@ struct FSNode {
 
 void load_ustar(struct TarHeader* header);
 
+struct FSNode* tar_find_file(struct FSNode* root, i8 const* const name);
+
 extern struct FSNode* fs_root;
 
 #endif
