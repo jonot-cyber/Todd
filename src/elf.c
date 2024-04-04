@@ -31,5 +31,5 @@ void elf_load(void* data) {
 	assert(entry_point != header->program_entry_offset, "elf_load: Failed to find entry point");
 	/* Get the offset into the file data */
 	entry_point += (u32)data;
-	asm volatile("call %0" :: "r"(entry_point));
+	asm volatile("call *%0" :: "r"(entry_point));
 }

@@ -2,8 +2,11 @@ CFLAGS += -m32 -nostdinc -fno-builtin -g -fno-strict-aliasing -Wall -Wextra -Wer
 ASFLAGS += -m32 -g -Wall -Wextra -Werror
 
 SRCS = $(wildcard src/*.c src/lisp/*.c)
-INITRD_SRCS = $(wildcard initrd/*)
 OBJS = $(patsubst %.c,build/%.o,$(SRCS))
+
+# Let's build some things for the ramdisk
+initrd/todd.elf: usr/todd.c usr/system.s usr/system.h usr/link.ld
+	$(CC) ${CFLAGS} -ffreestanding -nostdlib -fPIE -fPIC -Tusr/link.ld -o $@ usr/todd.c usr/system.s
 
 build/%.s.o: %.s
 	@mkdir -p $(@D)
@@ -16,7 +19,7 @@ build/%.o: %.c
 build/Kernel: build/src/boot.s.o build/src/gdt.s.o build/src/task.s.o $(OBJS)
 	$(LD) ${LDFLAGS} -melf_i386 -Tsrc/link.ld -nostdlib -o $@ $^
 
-build/initrd.tar: $(INITRD_SRCS)
+build/initrd.tar: initrd/todd.elf
 	tar -c $^ > $@
 
 clean:
