@@ -18,4 +18,12 @@ struct ASTNode* method_not(struct ASTNode*, struct Scope*);
 struct ASTNode* method_lambda(struct ASTNode*, struct Scope*);
 struct ASTNode* method_read(struct ASTNode*, struct Scope*);
 
+struct ASTNode* method_l(struct ASTNode*, struct Scope*);
+struct ASTNode* method_g(struct ASTNode*, struct Scope*);
+struct ASTNode* method_le(struct ASTNode*, struct Scope*);
+struct ASTNode* method_ge(struct ASTNode*, struct Scope*);
+struct ASTNode* method_ne(struct ASTNode*, struct Scope*);
+
+struct ASTNode* method_lines(struct ASTNode*, struct Scope*);
+
 #endif

@@ -220,21 +220,96 @@ struct ASTNode* method_read(struct ASTNode* args, struct Scope* scope) {
 	struct ASTNode* file_path = exec_node(scope, arg);
 	assert(file_path->type == AST_STRING, "must provide a file path");
 	struct FSNode* ptr = fs_root;
-	while (ptr != NULL) {
-		/* Found a match */
-		if (strcmp(ptr->name, file_path->data.span) == 0) {
-			i8* data = kmalloc(ptr->file_size + 1);
-			memcpy(ptr->data, data, ptr->file_size);
-			data[ptr->file_size] = '\0';
-			struct ASTNode* ret = scope_kmalloc(scope);
-			ret->type = AST_STRING;
-			ret->data.span = data;
-			return ret;
-		}
-		ptr = ptr->next;
+	struct FSNode* find_res = tar_find_file(ptr, file_path->data.span);
+	if (find_res == NULL) {
+		struct ASTNode* fail_ret = scope_kmalloc(scope);
+		fail_ret->type = AST_INT;
+		fail_ret->data.num = 0;
+		return fail_ret;
 	}
-	struct ASTNode* fail_ret = scope_kmalloc(scope);
-	fail_ret->type = AST_INT;
-	fail_ret->data.num = 0;
-	return fail_ret;
+	i8* data = kmalloc(ptr->file_size + 1);
+	memcpy(ptr->data, data, ptr->file_size);
+	data[ptr->file_size] = '\0';
+	struct ASTNode* ret = scope_kmalloc(scope);
+	ret->type = AST_STRING;
+	ret->data.span = data;
+	return ret;
+}
+
+/* Less than */
+struct ASTNode* method_l(struct ASTNode* args, struct Scope* scope) {
+	struct ASTNode* node_1 = exec_node(scope, args->data.pair.p1);
+	struct ASTNode* node_2 = exec_node(scope, args->data.pair.p2->data.pair.p1);
+	assert(node_1->type == AST_INT, "method_l: First argument isn't an int");
+	assert(node_2->type == AST_INT, "method_l: Second argument isn't an int");
+	struct ASTNode* ret = scope_kmalloc(scope);
+	ret->type = AST_INT;
+	ret->data.num = node_1->data.num < node_2->data.num;
+	return ret;
+}
+
+/* Greater than */
+struct ASTNode* method_g(struct ASTNode* args, struct Scope* scope) {
+	struct ASTNode* node_1 = exec_node(scope, args->data.pair.p1);
+	struct ASTNode* node_2 = exec_node(scope, args->data.pair.p2->data.pair.p1);
+	assert(node_1->type == AST_INT, "method_g: First argument isn't an int");
+	assert(node_2->type == AST_INT, "method_g: Second argument isn't an int");
+	struct ASTNode* ret = scope_kmalloc(scope);
+	ret->type = AST_INT;
+	ret->data.num = node_1->data.num > node_2->data.num;
+	return ret;
+}
+
+/* Less than or equal to */
+struct ASTNode* method_le(struct ASTNode* args, struct Scope* scope) {
+	struct ASTNode* node_1 = exec_node(scope, args->data.pair.p1);
+	struct ASTNode* node_2 = exec_node(scope, args->data.pair.p2->data.pair.p1);
+	assert(node_1->type == AST_INT, "method_le: First argument isn't an int");
+	assert(node_2->type == AST_INT, "method_le: Second argument isn't an int");
+	struct ASTNode* ret = scope_kmalloc(scope);
+	ret->type = AST_INT;
+	ret->data.num = node_1->data.num <= node_2->data.num;
+	return ret;
+}
+
+/* Greater than or equal to */
+struct ASTNode* method_ge(struct ASTNode* args, struct Scope* scope) {
+	struct ASTNode* node_1 = exec_node(scope, args->data.pair.p1);
+	struct ASTNode* node_2 = exec_node(scope, args->data.pair.p2->data.pair.p1);
+	assert(node_1->type == AST_INT, "method_ge: First argument isn't an int");
+	assert(node_2->type == AST_INT, "method_ge: Second argument isn't an int");
+	struct ASTNode* ret = scope_kmalloc(scope);
+	ret->type = AST_INT;
+	ret->data.num = node_1->data.num >= node_2->data.num;
+	return ret;
+}
+
+/* Not equal to */
+struct ASTNode* method_ne(struct ASTNode* args, struct Scope* scope) {
+	struct ASTNode* node_1 = exec_node(scope, args->data.pair.p1);
+	struct ASTNode* node_2 = exec_node(scope, args->data.pair.p2->data.pair.p1);
+	assert(node_1->type == AST_INT, "method_ne: First argument isn't an int");
+	assert(node_2->type == AST_INT, "method_ne: Second argument isn't an int");
+	struct ASTNode* ret = scope_kmalloc(scope);
+	ret->type = AST_INT;
+	ret->data.num = node_1->data.num != node_2->data.num;
+	return ret;
+}
+
+struct ASTNode* method_lines(struct ASTNode* args, struct Scope* scope) {
+	struct ASTNode* str = exec_node(scope, args->data.pair.p1);
+	assert(str->type == AST_STRING, "method_lines: Invalid argument");
+	i8* start_ptr = str->data.span;
+	i8* end_ptr = str->data.span;
+	while (true) {
+		if (*end_ptr == '\0') {
+			break;
+		} else if (*end_ptr == '\n') {
+			i8* buf = kmalloc(end_ptr - start_ptr + 1);
+			memcpy(start_ptr, buf, end_ptr - start_ptr);
+			buf[end_ptr - start_ptr] = '\0';
+			start_ptr = end_ptr;
+		}
+		end_ptr++;
+	}
 }

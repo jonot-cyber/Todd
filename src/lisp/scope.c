@@ -61,6 +61,13 @@ void scope_init(struct Scope* scope) {
 	scope_add_builtin(scope, method_not, "not");
 	scope_add_builtin(scope, method_lambda, "lambda");
 	scope_add_builtin(scope, method_read, "read");
+
+	scope_add_builtin(scope, method_l, "<");
+	scope_add_builtin(scope, method_g, ">");
+	scope_add_builtin(scope, method_le, "<=");
+	scope_add_builtin(scope, method_ge, ">=");
+	/* Haskell syntax is cool, and we get to use it in this :3 */
+	scope_add_builtin(scope, method_ne, "/=");
 }
 
 void scope_add(struct Scope* scope, struct ScopeEntry* entry) {
