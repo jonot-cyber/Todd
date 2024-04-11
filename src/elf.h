@@ -81,6 +81,6 @@ struct ElfSectionHeader {
 	u32 sh_entsize; /* Huh */
 } __attribute__((packed));
 
-void elf_load(void* data);
+void elf_load(void* data, u32 size);
 
 #endif

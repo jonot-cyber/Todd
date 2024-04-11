@@ -10,6 +10,10 @@ struct Task {
 	struct Task* prev;
 	u32 priority;
 	u32 age;
+	/* The entry point of the currently running executable, if it exists. This is needed for a hack in syscall.c  */
+	void *elf_entry_point;
+	void *elf_file_start;
+	u32 elf_file_size;
 };
 
 extern struct Task* current_task;

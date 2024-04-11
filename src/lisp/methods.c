@@ -329,7 +329,7 @@ struct ASTNode* method_exec(struct ASTNode* args, struct Scope* scope) {
 		fail_ret->data.num = 1;
 		return fail_ret;
 	}
-	elf_load(ptr->data);
+	elf_load(find_res->data, find_res->file_size);
 	struct ASTNode* ret = scope_kmalloc(scope);
 	ret->type = AST_INT;
 	ret->data.num = 0;
