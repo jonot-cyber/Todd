@@ -11,7 +11,7 @@ void remap_global_offset_table(u32 entry_point, u32 *addr, u32 size) {
 	}
 }
 
-void elf_load(void *data) {
+i32 elf_load(void *data) {
 	struct ElfHeader *header = data;
 	/* Verification */
 	const char magic_numbers[4] = { 0x7f, 'E', 'L', 'F' };
@@ -63,5 +63,7 @@ void elf_load(void *data) {
 	/* Set this variable so we don't offset the global offset
 	 * table more than once */
 	header->has_been_run = 1;
-	asm volatile("call *%0" :: "r"(entry_point));
+	i32 ret;
+	asm volatile("call *%1; movl %%eax, %0" : "=r"(ret) : "r"(entry_point));
+	return ret;
 }

@@ -324,14 +324,15 @@ struct ASTNode* method_exec(struct ASTNode* args, struct Scope* scope) {
 	struct FSNode* ptr = fs_root;
 	struct FSNode* find_res = tar_find_file(ptr, file_path->data.span);
 	if (find_res == NULL) {
+		printf("Coudln't find that executable\n");
 		struct ASTNode* fail_ret = scope_kmalloc(scope);
 		fail_ret->type = AST_INT;
 		fail_ret->data.num = 1;
 		return fail_ret;
 	}
-	elf_load(find_res->data);
+	i32 status_code = elf_load(find_res->data);
 	struct ASTNode* ret = scope_kmalloc(scope);
 	ret->type = AST_INT;
-	ret->data.num = 0;
+	ret->data.num = status_code;
 	return ret;
 }
