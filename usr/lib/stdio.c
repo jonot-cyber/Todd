@@ -28,6 +28,7 @@ void puts(const char *str) {
 }
 
 void printf(const char *fmt, ...) {
+	writehex((unsigned)fmt);
 	void *stack_ptr = (void *)&fmt;
 	/* Skip the format string in the stack pointer */
 	stack_ptr += 4;
@@ -77,4 +78,21 @@ void printf(const char *fmt, ...) {
 			fmt++;
 		}
 	}
+}
+
+/* This funciton is safer than the normal gets */
+int gets(char *buf, int size) {
+	for (int i = 0; i < size - 1; i++) {
+		char ch;
+		read(&ch, 1);
+		if (ch == '\n') {
+			buf[i] = '\0';
+			return i;
+		}
+		else
+			buf[i] = ch;
+	}
+	/* make sure that the string is always null terminated */
+	buf[size - 1] = '\0';
+	return size - 1;
 }

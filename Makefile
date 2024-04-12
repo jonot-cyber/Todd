@@ -1,8 +1,8 @@
 CFLAGS += -m32 -nostdinc -fno-builtin -g -fno-strict-aliasing -Wall -Wextra -Werror
 ASFLAGS += -m32 -g -Wall -Wextra -Werror
 
-USR_CFLAGS = ${CFLAGS} -fpie -ffreestanding -fno-plt
-USR_ASFLAGS = ${ASFLAGS} -fpie -ffreestanding -fno-plt
+USR_CFLAGS = ${CFLAGS} -fPIE -fPIC -ffreestanding -fno-plt
+USR_ASFLAGS = ${ASFLAGS} -fPIE -fPIC -ffreestanding -fno-plt
 
 SRCS = $(wildcard src/*.c src/lisp/*.c)
 OBJS = $(patsubst %.c,build/%.o,$(SRCS))

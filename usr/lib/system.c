@@ -7,3 +7,7 @@ extern void __sys2(unsigned, unsigned, unsigned);
 void write(void *data, unsigned size) {
 	__sys2(0, (unsigned)data, size);
 }
+
+void read(void *data, unsigned size) {
+	__sys2(1, (unsigned)data, size);
+}

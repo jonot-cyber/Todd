@@ -1,8 +1,10 @@
 #include "stdio.h"
+#include "system.h"
 
 int main() {
-	for (int i = 0; i < 100; i++) {
-		printf("Printf test %d\n", i);
-	}
+	char name_buf[16];
+	printf("What is your name? ");
+	gets(name_buf, 16);
+	printf("Hello, %s\n", name_buf);
 	return 0;
 }

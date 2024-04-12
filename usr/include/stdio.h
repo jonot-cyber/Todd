@@ -5,4 +5,6 @@ void putchar(char c);
 void puts(const char *str);
 void printf(const char *format, ...);
 
+int gets(char *buf, int size);
+
 #endif
