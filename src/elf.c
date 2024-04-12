@@ -14,10 +14,9 @@ void remap_global_offset_table(u32 entry_point, u32 *addr, u32 size) {
 void elf_load(void *data) {
 	struct ElfHeader *header = data;
 	/* Verification */
-	assert(header->magic_number[0] = 0x74, "elf_load: Bad magic!");
-	assert(header->magic_number[0] = 'E', "elf_load: Bad magic!");
-	assert(header->magic_number[0] = 'L', "elf_load: Bad magic!");
-	assert(header->magic_number[0] = 'F', "elf_load: Bad magic!");
+	const char magic_numbers[4] = { 0x7f, 'E', 'L', 'F' };
+	assert(*(u32*)magic_numbers == *(u32*)header->magic_number, "elf_load: Bad magic");
+	assert(strcmp_span((i8*)header->magic_number, magic_numbers, 4) == 0, "elf_load: Bad magic");
 	assert(header->word_size == 1, "elf_load: Can't load a 64 bit executable");
 	assert(header->endian == 1, "elf_load: Big Endian executable");
 	assert(header->type[0] == 2, "elf_load: Not an executable");

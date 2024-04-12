@@ -28,7 +28,6 @@ void puts(const char *str) {
 }
 
 void printf(const char *fmt, ...) {
-	writehex((unsigned)fmt);
 	void *stack_ptr = (void *)&fmt;
 	/* Skip the format string in the stack pointer */
 	stack_ptr += 4;
