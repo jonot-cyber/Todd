@@ -20,9 +20,6 @@ void task_init() {
 	current_task->prev = current_task;
 	current_task->priority = 0;
 	current_task->age = 0;
-	current_task->elf_entry_point = NULL;
-	current_task->elf_file_size = 0;
-	current_task->elf_file_start = NULL;
 }
 
 void move_stack(void* start) {
@@ -40,9 +37,6 @@ void move_stack(void* start) {
 	new_task->prev = current_task;
 	new_task->priority = 0;
 	new_task->age = 0;
-	new_task->elf_entry_point = NULL;
-	new_task->elf_file_size = 0;
-	new_task->elf_file_start = NULL;
 	current_task->next = new_task;
 }
 

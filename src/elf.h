@@ -9,7 +9,14 @@ struct ElfHeader {
 	u8 endian; /* 1 = LE, 2 = BE. x86 is LE, so should be 1 */
 	u8 header_version;
 	u8 os_abi;
-	u8 padding[8];
+	/* This field is typically just used for padding, but since it
+	 * isn't being used by other people, and since it is
+	 * traditionally set to 0, we can use one of these bytes to
+	 * store our own information. In this case, we use the byte to
+	 * store whether we have already offset the global offset
+	 * table or not */
+	u8 has_been_run;
+	u8 padding[7];
 	u8 type[2]; /* type, 1 = relocatable, 2 = executable, 3 = shared, 4 = core */
 	u8 instruction_set[2]; /* should be 0x03 */
 	u32 elf_version; /* should just be 1 */
@@ -81,6 +88,6 @@ struct ElfSectionHeader {
 	u32 sh_entsize; /* Huh */
 } __attribute__((packed));
 
-void elf_load(void* data, u32 size);
+void elf_load(void* data);
 
 #endif
