@@ -11,3 +11,17 @@ void write(void *data, unsigned size) {
 void read(void *data, unsigned size) {
 	__sys2(1, (unsigned)data, size);
 }
+
+void *malloc(unsigned size) {
+	void *dest = 0;
+	__sys2(2, (unsigned)&dest, size);
+	return dest;
+}
+
+void free(void *ptr) {
+	__sys1(3, (unsigned)ptr);
+}
+
+void writehex(unsigned num) {
+	__sys1(4, num);
+}

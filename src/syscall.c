@@ -3,6 +3,7 @@
 #include "isr.h"
 #include "io.h"
 #include "keyboard.h"
+#include "memory.h"
 
 bool is_code_valid(i8 code) {
 	if (code <= 0)
@@ -24,19 +25,37 @@ i8 read_char() {
 
 void syscall_handler(struct Registers regs) {
 	switch (regs.eax) {
-	case 0: /* write. ebx=ptr, ecx=len */ {
-		i8* ptr = (i8*)regs.ebx;
+	case SYSCALL_WRITE: /* write. ebx=ptr, ecx=len */ {
+		i8 *ptr = (i8 *)regs.ebx;
 		for (u32 i = 0; i < regs.ecx; i++)
 			write_char(ptr[i]);
 		break;
 	}
-	case 1: /* read. ebx=ptr, ecx=len */ {
-		i8* ptr = (i8*)regs.ebx;
+	case SYSCALL_READ: /* read. ebx=ptr, ecx=len */ {
+		i8 *ptr = (i8 *)regs.ebx;
 		for (u32 i = 0; i < regs.ecx; i++) {
 			ptr[i] = read_char();
 		}
 		break;
 	}
+	case SYSCALL_MALLOC: /* malloc. ebx=ptr to void*, ecx=size */ {
+		/* Good operating systems don't do this. Instead, they
+		 * expose a way to map pages into your page table, and
+		 * leave malloc to userspace code. If you hadn't
+		 * noticed, I am not writing a good operating system,
+		 * si I will do this anyways */
+		void **ptr = (void **)regs.ebx;
+		void *ret = kmalloc(regs.ecx);
+		*ptr = ret;
+		break;
+	}
+	case SYSCALL_FREE: /* free. ebx=ptr to memory */ {
+		kfree((void *)regs.ebx);
+		break;
+	}
+	case SYSCALL_WRITEHEX:
+		printf("0x%x\n", regs.ebx);
+		break;
 	default:
 		printf("Syscall 0d%d\n", regs.eax);
 		assert(false, "syscall_handler: Not an implemented syscall");
