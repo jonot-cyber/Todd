@@ -8,6 +8,8 @@ enum Syscalls {
 	SYSCALL_MALLOC = 2,
 	SYSCALL_FREE = 3,
 	SYSCALL_WRITEHEX = 4,
+	SYSCALL_FOPEN = 5,
+	SYSCALL_EXEC = 6,
 };
 
 void syscall_init();

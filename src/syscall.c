@@ -1,9 +1,11 @@
 #include "syscall.h"
 
+#include "elf.h"
 #include "isr.h"
 #include "io.h"
 #include "keyboard.h"
 #include "memory.h"
+#include "tar.h"
 
 bool is_code_valid(i8 code) {
 	if (code <= 0)
@@ -56,6 +58,18 @@ void syscall_handler(struct Registers regs) {
 	case SYSCALL_WRITEHEX:
 		printf("0x%x\n", regs.ebx);
 		break;
+	case SYSCALL_FOPEN: {
+		void **ptr = (void **)regs.ebx;
+		void *ret = tar_find_file(fs_root, (const i8 *)regs.ecx);
+		*ptr = ret;
+		break;
+	}
+	case SYSCALL_EXEC: {
+		i32 *ptr = (i32 *)regs.ebx;
+		i32 ret = elf_load((void *)regs.ecx);
+		*ptr = ret;
+		break;
+	}
 	default:
 		printf("Syscall 0d%d\n", regs.eax);
 		assert(false, "syscall_handler: Not an implemented syscall");

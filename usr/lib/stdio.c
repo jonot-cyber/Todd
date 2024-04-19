@@ -1,15 +1,7 @@
 #include "stdio.h"
 
+#include "string.h"
 #include "system.h"
-
-/* TODO: Move this into a separate string.h */
-int strlen(const char *str) {
-	const char *p = str;
-	while (*p) {
-		p++;
-	}
-	return p - str;
-}
 
 
 void putchar(char c) {

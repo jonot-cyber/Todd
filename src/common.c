@@ -36,6 +36,8 @@ void memset(void* start, u8 value, u32 size) {
 }
 
 void memcpy(const void* src, void* dst, u32 size) {
+	if (size == 0)
+		return;
 	assert(src != NULL, "memcpy: src is null");
 	assert(dst != NULL, "memcpy: dst is null");
 	u8* dst2 = (u8*)dst;

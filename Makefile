@@ -19,17 +19,30 @@ build/usr.lib.system.o: usr/lib/system.c
 build/usr.lib.stdio.o: usr/lib/stdio.c
 	$(CC) ${USR_CFLAGS} -Iusr/include -c -o $@ $^
 
+build/usr.lib.string.o: usr/lib/string.c
+	$(CC) ${USR_CFLAGS} -Iusr/include -c -o $@ $^
+
+build/usr.lib.file.o: usr/lib/file.c
+	$(CC) ${USR_CFLAGS} -Iusr/include -c -o $@ $^
+
 build/usr.todd.o: usr/todd.c
 	$(CC) ${USR_CFLAGS} -Iusr/include -c -o $@ $^
 
 build/usr.printf_test.o: usr/printf_test.c
 	$(CC) ${USR_CFLAGS} -Iusr/include -c -o $@ $^
 
-initrd/todd.elf: usr/include/system.h usr/link.ld build/usr.lib.system.o build/usr.lib.system.s.o build/usr.todd.o
-	$(CC) ${USR_CFLAGS} -nostdlib -Tusr/link.ld -o $@ build/usr.todd.o build/usr.lib.system.s.o build/usr.lib.system.o
+initrd/todd.elf: usr/include/system.h usr/link.ld build/usr.lib.system.o build/usr.lib.system.s.o build/usr.todd.o build/usr.lib.string.o
+	$(CC) ${USR_CFLAGS} -nostdlib -Tusr/link.ld -o $@ build/usr.todd.o build/usr.lib.system.s.o build/usr.lib.system.o build/usr.lib.string.o
 
-initrd/test.elf: usr/link.ld build/usr.lib.system.o build/usr.lib.system.s.o build/usr.printf_test.o build/usr.lib.stdio.o
-	$(CC) ${USR_CFLAGS} -nostdlib -Tusr/link.ld -o $@ build/usr.printf_test.o build/usr.lib.system.s.o build/usr.lib.system.o build/usr.lib.stdio.o
+initrd/test.elf: usr/link.ld build/usr.lib.system.o build/usr.lib.system.s.o build/usr.printf_test.o build/usr.lib.stdio.o build/usr.lib.string.o
+	$(CC) ${USR_CFLAGS} -nostdlib -Tusr/link.ld -o $@ build/usr.printf_test.o build/usr.lib.system.s.o build/usr.lib.system.o build/usr.lib.stdio.o build/usr.lib.string.o
+
+# Build the lisp shell
+build/usr.lisp.%.o: usr/lisp/%.c
+	$(CC) ${USR_CFLAGS} -Iusr/include -Iusr/lisp -c -o $@ $^
+
+initrd/lisp.elf: usr/link.ld build/usr.lib.system.o build/usr.lib.system.s.o build/usr.lisp.exe.o build/usr.lisp.lexer.o build/usr.lisp.main.o build/usr.lisp.methods.o build/usr.lisp.parser.o build/usr.lisp.scope.o build/usr.lisp.array.o build/usr.lib.stdio.o build/usr.lib.string.o build/usr.lib.file.o
+	$(CC) ${USR_CFLAGS} -nostdlib -Tusr/link.ld -o $@ build/usr.lib.system.o build/usr.lib.system.s.o build/usr.lisp.exe.o build/usr.lisp.lexer.o build/usr.lisp.main.o build/usr.lisp.methods.o build/usr.lisp.parser.o build/usr.lisp.scope.o build/usr.lisp.array.o build/usr.lib.stdio.o build/usr.lib.string.o build/usr.lib.file.o
 
 build/%.s.o: %.s
 	@mkdir -p $(@D)
@@ -42,7 +55,7 @@ build/%.o: %.c
 build/Kernel: build/src/boot.s.o build/src/gdt.s.o build/src/task.s.o $(OBJS)
 	$(LD) ${LDFLAGS} -melf_i386 -Tsrc/link.ld -nostdlib -o $@ $^
 
-build/initrd.tar: initrd/todd.elf initrd/test.elf
+build/initrd.tar: initrd/todd.elf initrd/test.elf initrd/lisp.elf
 	tar -c $^ > $@
 
 clean:

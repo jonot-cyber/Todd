@@ -136,9 +136,15 @@ void memory_init(u32 bytes) {
 }
 
 void page_fault(struct Registers regs) {
-	UNUSED(regs);
 	u32 address;
 	asm volatile("mov %%cr2, %0" : "=r"(address));
-	printf("PAGE FAULT: 0x%x", address);
+	printf("PAGE FAULT: 0x%x\n", address);
+	printf("eax: 0x%x\n", regs.eax);
+	printf("ebx: 0x%x\n", regs.ebx);
+	printf("ecx: 0x%x\n", regs.ecx);
+	printf("edx: 0x%x\n", regs.edx);
+	printf("esp: 0x%x\n", regs.esp);
+	printf("ebp: 0x%x\n", regs.ebp);
+	printf("eip: 0x%x\n", regs.eip);
 	halt();
 }

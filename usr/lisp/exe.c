@@ -1,29 +1,30 @@
-#include "exe.h"
-#include "parser.h"
+#include "stdio.h"
+#include "string.h"
+#include "system.h"
 
-#include "../io.h"
-#include "../memory.h"
-#include "../string.h"
+#include "exe.h"
+
+#include "parser.h"
 #include "scope.h"
 
 struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
-	if (v == NULL) {
-		return NULL;
-	}
-	struct ASTNode* ret = scope_kmalloc(scope);
+	if (v == 0)
+		return 0;
+
+	struct ASTNode *ret = scope_kmalloc(scope);
 	switch (v->t) {
 	case P_INT:
 	{
 		ret->type = AST_INT;
 		struct ParserSpan* span = v->data;
-		const i8* start = span->start;
-		const i8* end = span->end;
-		kfree(span);
-		i8* buf = kmalloc(end - start + 1);
+		const char *start = span->start;
+		const char *end = span->end;
+		free(span);
+		char *buf = malloc(end - start + 1);
 		memcpy(start, buf, end - start);
 		buf[end - start] = '\0';
 		ret->data.num = str_to_uint(buf);
-		kfree(buf);
+		free(buf);
 		break;
 	}
 	case P_QUOTE_LIST:
@@ -45,7 +46,7 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 		free_ptr = free_ptr->n;
 		while (free_ptr) {
 			struct ParserListContents* next = free_ptr->n;
-			kfree(free_ptr);
+			free(free_ptr);
 			free_ptr = next;
 		}
 		break;
@@ -70,7 +71,7 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 		free_ptr = free_ptr->n;
 		while (free_ptr) {
 			struct ParserListContents* next = free_ptr->n;
-			kfree(free_ptr);
+			free(free_ptr);
 			free_ptr = next;
 		}
 		break;
@@ -78,10 +79,10 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 	case P_SYMBOL:
 	{
 		struct ParserSpan* span = v->data;
-		const i8* start = span->start;
-		const i8* end = span->end;
+		const char* start = span->start;
+		const char* end = span->end;
 		//kfree(v->data);
-		i8* buf = kmalloc(end - start + 1);
+		char* buf = malloc(end - start + 1);
 		memcpy(start, buf, end - start);
 		buf[end - start] = '\0';
 		ret->type = AST_SYMBOL;
@@ -91,7 +92,7 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 	case P_STRING:
 	{
 		struct ParserSpan* span = v->data;
-		i8* buf = kmalloc(span->end - span->start - 1);
+		char* buf = malloc(span->end - span->start - 1);
 		memcpy(span->start + 1, buf, span->end - span->start - 2);
 		buf[span->end - span->start - 2] = '\0';
 		ret->type = AST_STRING;
@@ -99,30 +100,41 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 		break;
 	}
 	default:
-		assert(false, "convert_value: Unknown type");
-		break;
+		printf("convert_value: Unknown type\n");
+		return 0;
 	}
-	kfree(v);
+	free(v);
 	return ret;
 }
 
 struct ASTNode* convert_list(struct Scope* scope, struct ParserListContents* list) {
-	if (list == NULL) {
-		return NULL;
-	}
+	if (list == 0)
+		return 0;
+
 	struct ASTNode* ret = scope_kmalloc(scope);
 	ret->type = AST_PAIR;
 	ret->data.pair.p1 = convert_value(scope, list->v);
 	ret->data.pair.p2 = convert_list(scope, list->n);
 	return ret;
 }
-
+#include "methods.h"
 struct ASTNode* exec_function(struct ASTNode* method, struct ASTNode* args, struct Scope* scope) {
-	assert(method->type == AST_METHOD, "exec_function: Not a symbol name");
+	if (method == 0) {
+		printf("I am angry");
+	}
+	if (method->type != AST_METHOD) {
+		printf("exec_function: Not a symbol name\n");
+		return 0;
+	}
 
 	// Call a method implemented in C
-	if (method->data.method.method) {
-		struct ASTNode* ret =  method->data.method.method(args, scope);
+	if (method->data.method.method != 0) {
+		printf("Test: %d\n", method);
+		if ((int)method == 0x100) {
+			return method_add(args, scope);
+		}
+		struct ASTNode *ret =  method->data.method.method(args, scope);
+		while (1);
 		return ret;
 	}
 	scope_in(scope);
@@ -132,13 +144,19 @@ struct ASTNode* exec_function(struct ASTNode* method, struct ASTNode* args, stru
 	// Map the arguments to the parameters
 	while (param_ptr) {
 		struct ASTNode* param = param_ptr->data.pair.p1;
-		assert(param != NULL, "exec_function: Null parameter");
-		assert(param->type == AST_SYMBOL, "exec_function: Parameter name isn't a symbol");
+		if (param == 0) {
+			printf("exec_function: Null paramter\n");
+			return 0;
+		}
+		if (param->type != AST_SYMBOL) {
+			printf("exec_function: Parameter name isn't a symbol");
+			return 0;
+		}
 		struct ASTNode* arg_result = exec_node(scope, arg_ptr->data.pair.p1);
 		struct ScopeEntry new_entry;
 		memset(&new_entry, 0, sizeof(struct ScopeEntry));
 		new_entry.node = arg_result;
-		new_entry.name = (i8*)param->data.span;
+		new_entry.name = (char*)param->data.span;
 		scope_add(scope, &new_entry);
 		param_ptr = param_ptr->data.pair.p2;
 		arg_ptr = arg_ptr->data.pair.p2;
@@ -150,9 +168,8 @@ struct ASTNode* exec_function(struct ASTNode* method, struct ASTNode* args, stru
 }
 
 struct ASTNode* exec_node(struct Scope* scope, struct ASTNode* n) {
-	if (n == NULL) {
-		return NULL;
-	}
+	if (n == 0)
+		return 0;
 	switch (n->type) {
 	case AST_INT:
 		return n;
@@ -180,7 +197,10 @@ struct ASTNode* exec_node(struct Scope* scope, struct ASTNode* n) {
 	case AST_SYMBOL:
 	{
 		struct ScopeEntry* r = scope_lookup(scope, n->data.span);
-		assert(r != NULL, "exec_node: unknown symbol");
+		if (r == 0) {
+			printf("exec_node: unknown symbol\n");
+			return 0;
+		}
 		struct ASTNode* res = exec_node(scope, r->node);
 		return res;
 	}
@@ -189,15 +209,15 @@ struct ASTNode* exec_node(struct Scope* scope, struct ASTNode* n) {
 		return n;
 	}
 	default:
-		write_string("exe: bad type\n");
+		printf("exe: bad type\n");
 		break;
 	}
-	return NULL;
+	return 0;
 }
 
 void output(struct ASTNode* n) {
-	if (n == NULL) {
-		write_string("NULL");
+	if (n == 0) {
+		printf("NULL");
 		return;
 	}
 	switch (n->type) {
@@ -205,29 +225,29 @@ void output(struct ASTNode* n) {
 		printf("%d", n->data.num);
 		break;
 	case AST_PAIR:
-		write_char('(');
+		putchar('(');
 		output(n->data.pair.p1);
-		write_string(" . ");
+		printf(" . ");
 		output(n->data.pair.p2);
-		write_char(')');
+		putchar(')');
 		break;
 	case AST_QUOTE_PAIR:
-		write_string("'(");
+		printf("'(");
 		output(n->data.pair.p1);
-		write_string(" . ");
+		printf(" . ");
 		output(n->data.pair.p2);
-		write_char(')');
+		putchar(')');
 		break;
 	case AST_PATH:
 	case AST_SYMBOL:
 	{
-		write_string(n->data.span);
+		printf("%s", n->data.span);
 		break;
 	}
 	case AST_QUOTE_SYMBOL:
 	{
-		write_char('\'');
-		write_string(n->data.span);
+		putchar('\'');
+		printf("%s", n->data.span);
 		break;
 	}
 	case AST_STRING:
@@ -236,7 +256,7 @@ void output(struct ASTNode* n) {
 		break;
 	}
 	default:
-		printf("Unknown output type: %d\n", (u32)n->type);
+		printf("Unknown output type: %d\n", (unsigned)n->type);
 		break;
 	}
 }
@@ -246,7 +266,7 @@ void scope_exec(struct Scope* scope, struct ParserListContents* l) {
 	while (c) {
 		struct ASTNode* res = exec_node(scope, c->data.pair.p1);
 		output(res);
-		write_char('\n');
+		putchar('\n');
 		c = c->data.pair.p2;
 	}
 	scope_gc(scope);

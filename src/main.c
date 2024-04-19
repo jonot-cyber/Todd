@@ -141,7 +141,9 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 
 	check_modules(mboot);
 
-	lisp_repl();
+	struct FSNode *node = tar_find_file(fs_root, "initrd/lisp.elf");
+	elf_load(node->data);
+	// lisp_repl();
 
 	return 0;
 }
