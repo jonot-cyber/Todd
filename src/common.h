@@ -39,12 +39,12 @@ extern u32 initial_esp;
 /**
    Clears a section of memory to a value
  */
-void memset(void*, u8, u32);
+void memset(void *, u8, u32);
 
 /**
    Copies memory from one place to another
  */
-void memcpy(const void*, void*, u32);
+void memcpy(const void *, void *, u32);
 
 /**
    Triggers an infinite loop. Used in case of errors.
@@ -61,7 +61,7 @@ u32 align4k(u32);
    Assert that a condition is true. Doesn't do anything in release
    mode, but in debug will stop execution and display a message
  */
-void assert(bool, const i8*);
+void assert(bool, const i8 *);
 
 /**
    Sleeps for a number of milliseconds

@@ -7,14 +7,10 @@
 enum VGAColor background_color = BLACK;
 enum VGAColor foreground_color = WHITE;
 
-static u8 cursor_x;
-static u8 cursor_y;
+static u8 cursor_x = 0;
+static u8 cursor_y = 0;
 
-volatile u16* video_memory = (u16*)0xB8000;
-
-/* A queue to hold characters to print. This allows multiple threads
- * to output text without starvation with the mutex */
-static struct Queue write_queue;
+volatile u16 *video_memory = (u16*)0xB8000;
 
 void clear();
 u16 color_character(u8);
@@ -23,10 +19,6 @@ void move_cursor();
 void set_pos(u8, u8, u8);
 
 void monitor_init() {
-	queue_init(&write_queue, 64);
-	cursor_x = 0;
-	cursor_y = 0;
-	reset_color();
 	clear();
 }
 
@@ -64,13 +56,11 @@ void scroll() {
 	u16 blank = color_character(' ');
 
 	if (cursor_y >= 25) {
-		for (u32 i = 0; i < 24 * 80; i++) {
+		for (u32 i = 0; i < 24 * 80; i++)
 			video_memory[i] = video_memory[i+80];
-		}
 
-		for (u32 i = 24 * 80; i < 25 * 80; i++) {
+		for (u32 i = 24 * 80; i < 25 * 80; i++)
 			video_memory[i] = blank;
-		}
 
 		cursor_y = 24;
 	}
@@ -97,7 +87,7 @@ void monitor_write_char(i8 c) {
 		break;
 	default:
 	{
-		volatile u16* location = video_memory + (cursor_x + cursor_y * 80);
+		volatile u16 *location = video_memory + (cursor_x + cursor_y * 80);
 		*location = color_character(c);
 		cursor_x++;
 		if (cursor_x == 80) {

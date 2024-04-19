@@ -26,9 +26,9 @@ int main() {
 			scope_exec(&scope, contents);
 			memset(buf, 0, 256);
 			printf("=> ");
-		} else if (key == '\n') {
+		} else if (key == '\n')
 			printf(".. ");
-		} else if (key == '\b') {
+		else if (key == '\b') {
 			if (buf[buf_i - 1] == '(')
 				balance--;
 			else if (buf[buf_i - 1] == ')')

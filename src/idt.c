@@ -100,7 +100,7 @@ void idt_init() {
 	asm volatile("sti"); // Enable interrupts
 }
 
-void set_idt_entry(struct IDTEntry* e, u32 base, u16 sel, enum IDTFlags f) {
+void set_idt_entry(struct IDTEntry *e, u32 base, u16 sel, enum IDTFlags f) {
 	// Intel :)
 	e->base_low = base & 0xFFFF;
 	e->base_high = (base >> 16) & 0xFFFF;
@@ -146,8 +146,8 @@ void irq_handler(struct Registers registers) {
 
 	// If there's a handler, call it.
 	Handler method = get_handler(registers.int_no);
-	if (method && (u32)method != 0xdeadbeef) {
-		return method(registers);
-	}
+	if (method)
+		method(registers);
+	
 	return;
 }

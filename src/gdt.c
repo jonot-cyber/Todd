@@ -1,10 +1,12 @@
+/* Setting up the GDT. */
+
 #include "gdt.h"
 
 static struct GDTEntry entries[5];
 
 static struct GDTPointer ptr;
 
-void gdt_entry_set(struct GDTEntry* entry, u32 base, u32 limit, u8 a, u8 gran) {
+void gdt_entry_set(struct GDTEntry *entry, u32 base, u32 limit, u8 a, u8 gran) {
 	entry->base_low = (base & 0xFFFF);
 	entry->base_middle = (base >> 16) & 0xFF;
 	entry->base_high = (base >> 24) & 0xFF;

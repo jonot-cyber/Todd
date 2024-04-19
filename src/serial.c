@@ -46,8 +46,7 @@ void _serial_write_char(i8 c) {
 
 void serial_write_char(i8 c) {
 	/* Implement UNIX style line endings */
-	if (c == '\n') {
+	if (c == '\n')
 		_serial_write_char('\r');
-	}
 	_serial_write_char(c);
 }

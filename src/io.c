@@ -53,7 +53,7 @@ void write_char(i8 c) {
 	unlock(&io_lock);
 }
 
-void write_string(const i8* str) {
+void write_string(const i8 *str) {
 	while (*str) {
 		write_char(*str);
 		str++;
@@ -129,7 +129,7 @@ u8 hex2num(i8 c) {
 	return 0;
 }
 
-void printf(const i8* str, ...) {
+void printf(const i8 *str, ...) {
 	u32 stack_ptr = (u32)&str;
 	u32 offset = 4;
 	while (*str) {
@@ -141,20 +141,20 @@ void printf(const i8* str, ...) {
 				break;
 			case 'b':
 			{
-				u32 v = *(u32*)(stack_ptr + offset);
+				u32 v = *(u32 *)(stack_ptr + offset);
 				write_bin(v);
 				break;
 			}
 			case 'u':
 			{
-				u32 v = *(u32*)(stack_ptr + offset);
+				u32 v = *(u32 *)(stack_ptr + offset);
 				write_dec(v);
 				offset += 4;
 				break;
 			}
 			case 'd':
 			{
-				u32 v = *(u32*)(stack_ptr + offset);
+				u32 v = *(u32 *)(stack_ptr + offset);
 				/* Handle negative numbers with two's complement */
 				if (v & 0x8000000) {
 					v = ~v;
@@ -167,21 +167,21 @@ void printf(const i8* str, ...) {
 			}
 			case 'x':
 			{
-				u32 v = *(u32*)(stack_ptr + offset);
+				u32 v = *(u32 *)(stack_ptr + offset);
 				write_hex32(v);
 				offset += 4;
 				break;
 			}
 			case 's':
 			{
-				const i8* v = *(const i8**)(stack_ptr + offset);
+				const i8* v = *(const i8 **)(stack_ptr + offset);
 				write_string(v);
 				offset += 4;
 				break;
 			}
 			case 'c':
 			{
-				u32 v = *(u32*)(stack_ptr + offset);
+				u32 v = *(u32 *)(stack_ptr + offset);
 				write_char(v);
 				offset += 4;
 				break;

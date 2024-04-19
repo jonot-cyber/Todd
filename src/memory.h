@@ -30,7 +30,7 @@ void memory_init(void *start, u32 bytes);
 /**
    Allocate memory in the kernel
  */
-void* kmalloc(u32);
+void *kmalloc(u32);
 
 /**
    Allocate zeroed-memory in the kernel

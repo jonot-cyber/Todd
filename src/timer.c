@@ -8,10 +8,8 @@
 volatile u32 ticks = 0;
 
 static void timer_callback(struct Registers registers) {
-	ticks++;
-	if (ticks % 1 == 0) {		
-		switch_task();
-	}
+	ticks++;	
+	switch_task();
 	UNUSED(registers);
 }
 

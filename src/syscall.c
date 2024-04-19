@@ -17,9 +17,8 @@ bool is_code_valid(i8 code) {
 
 i8 read_char() {
 	i8 scan_code = 0;
-	while (!is_code_valid(scan_code)) {
+	while (!is_code_valid(scan_code))
 		scan_code = keyboard_scan();
-	}
 	i8 key = translate_code(scan_code);
 	write_char(key);
 	return key;
@@ -35,9 +34,8 @@ void syscall_handler(struct Registers regs) {
 	}
 	case SYSCALL_READ: /* read. ebx=ptr, ecx=len */ {
 		i8 *ptr = (i8 *)regs.ebx;
-		for (u32 i = 0; i < regs.ecx; i++) {
+		for (u32 i = 0; i < regs.ecx; i++)
 			ptr[i] = read_char();
-		}
 		break;
 	}
 	case SYSCALL_MALLOC: /* malloc. ebx=ptr to void*, ecx=size */ {
@@ -51,10 +49,9 @@ void syscall_handler(struct Registers regs) {
 		*ptr = ret;
 		break;
 	}
-	case SYSCALL_FREE: /* free. ebx=ptr to memory */ {
+	case SYSCALL_FREE: /* free. ebx=ptr to memory */
 		kfree((void *)regs.ebx);
 		break;
-	}
 	case SYSCALL_WRITEHEX:
 		printf("0x%x\n", regs.ebx);
 		break;
