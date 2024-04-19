@@ -111,12 +111,16 @@ bool alloc_page(struct PageDirectory* dir, u32 addr) {
 	return true;
 }
 
-void memory_init(u32 bytes) {
+void memory_init(void *start, u32 bytes) {
 	memory_size = bytes;
 	const u32 heap_size = 128 * 1024;
+	
+	if (alloc_ptr < start) {
+		alloc_ptr = start;
+	}
 	current_directory = kmalloc_a(sizeof(struct PageDirectory));
 	memset(current_directory, 0, sizeof(struct PageDirectory));
-	
+
 	u32 it = 0;
 	while (it < alloc_ptr + heap_size) {
 		alloc_page(current_directory, it);
