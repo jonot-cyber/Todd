@@ -117,11 +117,8 @@ struct ASTNode* convert_list(struct Scope* scope, struct ParserListContents* lis
 	ret->data.pair.p2 = convert_list(scope, list->n);
 	return ret;
 }
-#include "methods.h"
+
 struct ASTNode* exec_function(struct ASTNode* method, struct ASTNode* args, struct Scope* scope) {
-	if (method == 0) {
-		printf("I am angry");
-	}
 	if (method->type != AST_METHOD) {
 		printf("exec_function: Not a symbol name\n");
 		return 0;
@@ -129,12 +126,7 @@ struct ASTNode* exec_function(struct ASTNode* method, struct ASTNode* args, stru
 
 	// Call a method implemented in C
 	if (method->data.method.method != 0) {
-		printf("Test: %d\n", method);
-		if ((int)method == 0x100) {
-			return method_add(args, scope);
-		}
 		struct ASTNode *ret =  method->data.method.method(args, scope);
-		while (1);
 		return ret;
 	}
 	scope_in(scope);

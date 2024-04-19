@@ -25,7 +25,7 @@ enum PageFrameFlags {
 /**
    Initialize the memory susbsystem
  */
-void memory_init(u32);
+void memory_init(void *start, u32 bytes);
 
 /**
    Allocate memory in the kernel
