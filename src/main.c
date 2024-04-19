@@ -7,14 +7,11 @@
 #include "keyboard.h"
 #include "memory.h"
 #include "multiboot.h"
-#include "lisp/parser.h"
-#include "lisp/scope.h"
 #include "string.h"
 #include "syscall.h"
 #include "tar.h"
 #include "task.h"
 #include "timer.h"
-#include "lisp/exe.h"
 
 void output_todd_os() {
 	printf("%CrWelcome to %Cb1%CfcT%Cfeo%Cfad%Cfbd%Cf9O%CfdS%Cr\n");
@@ -32,60 +29,6 @@ void output_pass_fail(bool value) {
 		printf("%CfaPASS%Cr");
 	} else {
 		printf("%CfcFAIL%Cr");
-	}
-}
-
-static i8 buf[256];
-
-void lisp_repl() {
-	struct Scope scope;
-	scope_init(&scope);
-
-	memset(buf, 0, 256);
-	u32 buf_i = 0;
-	u32 balance = 0;
-
-	write_string("=> ");
-	while (true) {
-		i8 key = keyboard_scan();
-		if (key <= 0) {
-			continue;
-		}
-		if (key >= 'A' && key <= 'Z') {
-			continue;
-		}
-		i8 translated = translate_code(key);
-		write_char(translated);
-		if (translated == '\n' && balance == 0) {
-			buf_i = 0;
-			const i8* to_parse = buf;
-			u32 start_mem = heap_get_used();
-			struct ParserListContents* lc = parse(&to_parse);
-			u32 start_time = ticks;
-			scope_exec(&scope, lc);
-			u32 end_time = ticks;
-			u32 end_mem = heap_get_used();
-			printf("[%d ms, %d bytes]\n", end_time - start_time, end_mem - start_mem);
-			memset(buf, 0, 256);
-			write_string("=> ");
-		} else if (translated == '\n') {
-			write_string(".. ");
-		} else if (translated == '\b') {
-			if (buf[buf_i - 1] == '(') {
-				balance--;
-			} else if (buf[buf_i - 1] == ')') {
-				balance++;
-			}
-			buf_i--;
-		} else {
-			if (translated == '(') {
-				balance++;
-			}
-			if (translated == ')') {
-				balance--;
-			}
-			buf[buf_i++] = translated;
-		}
 	}
 }
 
@@ -142,7 +85,6 @@ int kmain(struct MultiBoot* mboot, u32 initialStack) {
 	struct FSNode *node = tar_find_file(fs_root, "initrd/lisp.elf");
 	elf_load(node->data);
 	halt();
-	// lisp_repl();
 
 	return 0;
 }

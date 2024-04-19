@@ -66,7 +66,7 @@ test: build/Kernel build/initrd.tar
 	qemu-system-i386 -kernel build/Kernel -initrd build/initrd.tar # -no-reboot -no-shutdown
 
 testng: build/Kernel build/initrd.tar
-	qemu-system-i386 -kernel build/Kernel -initrd build/initrd.tar -display none -serial stdio
+	qemu-system-i386 -kernel build/Kernel -initrd build/initrd.tar -display curses
 
 # Set QEMU to be debuggable
 debug: build/Kernel build/initrd.tar

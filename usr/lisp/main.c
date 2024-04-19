@@ -15,14 +15,9 @@ int main() {
 	unsigned buf_i = 0;
 	unsigned balance = 0;
 	printf("=> ");
-	const char *tmp_buf = "(+ 1 2)";
-	struct ParserListContents *lc = parse(&tmp_buf);
-	scope_exec(&scope, lc);
-	return 0;
 	while (1) {
 		char key;
-		gets(&key, 1);
-		putchar(key);
+		read(&key, 1);
 		/* Statement done */
 		if (key == '\n' && balance == 0) {
 			buf_i = 0;

@@ -461,7 +461,7 @@ struct ASTNode *recursive_map(struct ASTNode *method, struct ASTNode *args, stru
 	struct ASTNode *ret = scope_kmalloc(scope);
 	ret->type = AST_PAIR;
 	struct ASTNode *method_call = scope_kmalloc(scope);
-	method_call->type = AST_QUOTE_PAIR;
+	method_call->type = AST_PAIR;
 	method_call->data.pair.p1 = method;
 	method_call->data.pair.p2 = args->data.pair.p1;
 	ret->data.pair.p1 = exec_node(scope, method_call);
