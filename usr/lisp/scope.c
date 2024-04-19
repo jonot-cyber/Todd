@@ -9,7 +9,7 @@
 
 #define SCOPE_TABLES 512
 
-struct ASTNode* scope_kmalloc(struct Scope* scope) {
+struct ASTNode *scope_kmalloc(struct Scope* scope) {
 	struct ASTNode* ret = malloc(sizeof(struct ASTNode));
 	memset(ret, 0, sizeof(struct ASTNode));
 	array_push(&scope->nodes, &ret);
