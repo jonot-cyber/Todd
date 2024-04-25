@@ -33,7 +33,7 @@ struct ASTNode *method_add(struct ASTNode *n, struct Scope *scope) {
 
 struct ASTNode *method_sub(struct ASTNode *n, struct Scope *scope) {
 	PNULL(scope);
-	int first = 0;
+	int first = 1;
 	struct ASTNode *ret = scope_kmalloc(scope);
 	ret->type = AST_INT;
 	PNULL(n);
