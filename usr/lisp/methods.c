@@ -150,7 +150,7 @@ struct ASTNode *method_define(struct ASTNode *n, struct Scope *scope) {
 		struct ASTNode *name = CAR(p1);
 		TCHECK(name, AST_SYMBOL);
 		struct ASTNode *params = CDR(p1);
-		struct ASTNode* exe = scope_kmalloc(scope);
+		struct ASTNode *exe = scope_kmalloc(scope);
 		exe->type = AST_METHOD;
 		exe->data.method.params = params;
 		exe->data.method.node = p2;

@@ -49,6 +49,7 @@ void scope_init(struct Scope* scope) {
 	array_init(&scope->nodes, 4);
 
 	scope->data = malloc(SCOPE_TABLES * sizeof(struct ScopeEntry*));
+	scope->level = 0;
 	memset(scope->data, 0, SCOPE_TABLES * sizeof(struct ScopeEntry *));
 
 	scope_add_builtin(scope, method_add, "+");

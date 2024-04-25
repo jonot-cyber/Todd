@@ -19,7 +19,6 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 		struct ParserSpan *span = v->data;
 		const char *start = span->start;
 		const char *end = span->end;
-		free(span);
 		char *buf = malloc(end - start + 1);
 		memcpy(start, buf, end - start);
 		buf[end - start] = '\0';
@@ -77,7 +76,6 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 	case P_SYMBOL:
 	{
 		struct ParserSpan *span = v->data;
-		//kfree(v->data);
 		char *buf = malloc(span->end - span->start + 1);
 		memcpy(span->start, buf, span->end - span->start);
 		buf[span->end - span->start] = '\0';
@@ -121,9 +119,9 @@ struct ASTNode *exec_function(struct ASTNode *method, struct ASTNode *args, stru
 	}
 
 	// Call a method implemented in C
-	if (method->data.method.method != 0) {
+	if (method->data.method.method != 0)
 		return method->data.method.method(args, scope);
-	}
+
 	scope_in(scope);
 	// A pointer to the parameters
 	struct ASTNode *param_ptr = method->data.method.params;
@@ -165,7 +163,7 @@ struct ASTNode *exec_node(struct Scope *scope, struct ASTNode *n) {
 		return n;
 	case AST_PAIR:
 	{
-		struct ASTNode* first_node = exec_node(scope, n->data.pair.p1);
+		struct ASTNode *first_node = exec_node(scope, n->data.pair.p1);
 		if (first_node->type == AST_METHOD) {
 			return exec_function(first_node, n->data.pair.p2, scope);
 		}
