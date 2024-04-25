@@ -37,9 +37,13 @@ unsigned strlen(const char *a) {
 
 unsigned str_to_uint(const char *str) {
 	unsigned ret = 0;
-	while (*(str++)) {
+	while (*str) {
+		if (*str < '0' || *str > '9') {
+			return 0x123456789;
+		}
 		ret *= 10;
 		ret += (*str - '0');
+		str++;
 	}
 	return ret;
 }

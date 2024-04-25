@@ -19,8 +19,21 @@ void puts(const char *str) {
 	putchar('\n');
 }
 
+void write_decimal(int num) {
+	if (num < 0) {
+		putchar('-');
+		num *= -1;
+	}
+	if (num < 10) {
+		putchar('0' + num);
+		return;
+	}
+	write_decimal(num / 10);
+	write_decimal(num % 10);
+}
+
 void printf(const char *fmt, ...) {
-	void *stack_ptr = (void *)&fmt;
+	unsigned stack_ptr = (unsigned)&fmt;
 	/* Skip the format string in the stack pointer */
 	stack_ptr += 4;
 	while (*fmt) {
@@ -33,16 +46,7 @@ void printf(const char *fmt, ...) {
 				break;
 			case 'd': {
 				int val = *(int *)stack_ptr;
-				int pow = 1;
-				while (pow < val) {
-					pow *= 10;
-				}
-				pow /= 10;
-				while (pow) {
-					int digit = (val / pow) % 10;
-					putchar('0' + digit);
-					pow /= 10;
-				}
+				write_decimal(val);
 				stack_ptr += 4;
 				break;
 			}
