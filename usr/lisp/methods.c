@@ -456,21 +456,30 @@ struct ASTNode *method_apply(struct ASTNode *args, struct Scope *scope) {
 }
 
 struct ASTNode *recursive_map(struct ASTNode *method, struct ASTNode *args, struct Scope *scope) {
-	if (args == 0)
-		return 0;
+	PNULL(args);
 	struct ASTNode *ret = scope_kmalloc(scope);
 	ret->type = AST_PAIR;
 	struct ASTNode *method_call = scope_kmalloc(scope);
 	method_call->type = AST_PAIR;
 	method_call->data.pair.p1 = method;
-	method_call->data.pair.p2 = args->data.pair.p1;
+	TCHECK(args, AST_QUOTE_PAIR);
+
+	/* Create a temporary pair to store the recursive map data */
+	struct ASTNode *tmp_args = scope_kmalloc(scope);
+	tmp_args->type = AST_PAIR;
+	CAR(tmp_args) = CAR(args);
+	method_call->data.pair.p2 = tmp_args;
+
 	ret->data.pair.p1 = exec_node(scope, method_call);
-	ret->data.pair.p2 = recursive_map(method, args->data.pair.p2, scope);
+	ret->data.pair.p2 = recursive_map(method, CDR(args), scope);
 	return ret;
 }
 
 struct ASTNode *method_map(struct ASTNode *args, struct Scope *scope) {
-	struct ASTNode *method = exec_node(scope, args->data.pair.p1);
-	struct ASTNode *data = exec_node(scope, args->data.pair.p2->data.pair.p1);
+	PNULL(args);
+	TCHECK(args, AST_PAIR);
+	struct ASTNode *method = exec_node(scope, CAR(args));
+	TCHECK(CDR(args), AST_PAIR);
+	struct ASTNode *data = exec_node(scope, CAR(CDR(args)));
 	return recursive_map(method, data, scope);
 }
