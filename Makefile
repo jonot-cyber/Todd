@@ -42,7 +42,7 @@ build/usr.lisp.%.o: usr/lisp/%.c
 	$(CC) ${USR_CFLAGS} -Iusr/include -Iusr/lisp -c -o $@ $^
 
 initrd/lisp.elf: usr/link.ld build/usr.lib.system.o build/usr.lib.system.s.o build/usr.lisp.exe.o build/usr.lisp.lexer.o build/usr.lisp.main.o build/usr.lisp.methods.o build/usr.lisp.parser.o build/usr.lisp.scope.o build/usr.lisp.array.o build/usr.lib.stdio.o build/usr.lib.string.o build/usr.lib.file.o
-	$(CC) ${USR_CFLAGS} -nostdlib -Wl,--no-dynamic-linker -Wl,-Tusr/link.ld -o $@ build/usr.lib.system.o build/usr.lib.system.s.o build/usr.lisp.exe.o build/usr.lisp.lexer.o build/usr.lisp.main.o build/usr.lisp.methods.o build/usr.lisp.parser.o build/usr.lisp.scope.o build/usr.lisp.array.o build/usr.lib.stdio.o build/usr.lib.string.o build/usr.lib.file.o
+	$(LD) ${LDFLAGS} -pie -pic -melf_i386 -nostdlib --no-dynamic-linker -Tusr/link.ld -o $@ build/usr.lib.system.o build/usr.lib.system.s.o build/usr.lisp.exe.o build/usr.lisp.lexer.o build/usr.lisp.main.o build/usr.lisp.methods.o build/usr.lisp.parser.o build/usr.lisp.scope.o build/usr.lisp.array.o build/usr.lib.stdio.o build/usr.lib.string.o build/usr.lib.file.o
 
 build/%.s.o: %.s
 	@mkdir -p $(@D)

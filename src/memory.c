@@ -109,7 +109,7 @@ void memory_init(void *start, u32 bytes) {
 	const u32 heap_size = 128 * 1024;
 	
 	if (alloc_ptr < start)
-		alloc_ptr = start;
+		alloc_ptr = (u32)start;
 	current_directory = kmalloc_a(sizeof(struct PageDirectory));
 	memset(current_directory, 0, sizeof(struct PageDirectory));
 

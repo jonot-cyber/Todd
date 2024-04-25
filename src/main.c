@@ -34,7 +34,7 @@ void *save_modules(struct MultiBoot *mboot) {
 	struct MultiBootModule *mod_ptr = mboot->mods_addr;
 	for (u32 i = 0; i < count; i++)
 		if (mod_ptr->mod_end > end_ptr)
-			end_ptr = mod_ptr->mod_end;
+			end_ptr = (void *)mod_ptr->mod_end;
 	return end_ptr;
 }
 
