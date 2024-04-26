@@ -5,6 +5,7 @@
 #include "io.h"
 #include "keyboard.h"
 #include "memory.h"
+#include "monitor.h"
 #include "tar.h"
 
 bool is_code_valid(i8 code) {
@@ -65,6 +66,25 @@ void syscall_handler(struct Registers regs) {
 		i32 *ptr = (i32 *)regs.ebx;
 		i32 ret = elf_load((void *)regs.ecx);
 		*ptr = ret;
+		break;
+	}
+	case SYSCALL_SET_FG: {
+		u32 color = regs.ebx;
+		if (color > WHITE)
+			break;
+		foreground_color = color;
+		break;
+	}
+	case SYSCALL_SET_BG: {
+		u32 color = regs.ebx;
+		if (color > WHITE)
+			break;
+		background_color = color;
+		break;
+	}
+	case SYSCALL_RAND: {
+		u32 *ptr = (u32 *)regs.ebx;
+		*ptr = rand();
 		break;
 	}
 	default:

@@ -91,3 +91,11 @@ int gets(char *buf, int size) {
 	buf[size - 1] = '\0';
 	return size - 1;
 }
+
+void set_foreground_color(enum VGAColor color) {
+	setfg(color);
+}
+
+void set_background_color(enum VGAColor color) {
+	setbg(color);
+}

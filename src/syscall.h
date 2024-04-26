@@ -10,6 +10,9 @@ enum Syscalls {
 	SYSCALL_WRITEHEX = 4,
 	SYSCALL_FOPEN = 5,
 	SYSCALL_EXEC = 6,
+	SYSCALL_SET_FG = 7,
+	SYSCALL_SET_BG = 8,
+	SYSCALL_RAND = 9,
 };
 
 void syscall_init();

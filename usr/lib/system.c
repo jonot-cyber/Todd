@@ -37,3 +37,15 @@ int exec(void *elf) {
 	__sys2(6, (unsigned)&ret, (unsigned)elf);
 	return ret;
 }
+
+void setfg(char fg) {
+	__sys1(7, fg);
+}
+
+void setbg(char bg) {
+	__sys1(8, bg);
+}
+
+unsigned rand() {
+	__sys0(9);
+}
