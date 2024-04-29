@@ -1,5 +1,5 @@
-CFLAGS += -m32 -nostdinc -fno-builtin -g -fno-strict-aliasing -Wall -Wextra -fno-stack-protector
-ASFLAGS += -m32 -g -Wall -Wextra
+CFLAGS += -m32 -nostdinc -fno-builtin -O0 -fno-strict-aliasing -Wall -Wextra -fno-stack-protector
+ASFLAGS += -m32 -O0 -Wall -Wextra
 
 USR_CFLAGS = ${CFLAGS} -fPIE -fPIC -ffreestanding
 USR_ASFLAGS = ${ASFLAGS} -fPIE -fPIC -ffreestanding

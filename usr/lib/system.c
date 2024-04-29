@@ -47,5 +47,7 @@ void setbg(char bg) {
 }
 
 unsigned rand() {
-	__sys0(9);
+	int ret;
+	__sys1(9, (unsigned)&ret);
+	return ret;
 }
