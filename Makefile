@@ -38,10 +38,10 @@ initrd/todd.elf: usr/include/system.h usr/link.ld build/usr.lib.system.o build/u
 	$(CC) ${USR_CFLAGS} -nostdlib -Wl,-Tusr/link.ld -o $@ build/usr.todd.o build/usr.lib.system.s.o build/usr.lib.system.o build/usr.lib.string.o
 
 initrd/test.elf: usr/link.ld build/usr.lib.system.o build/usr.lib.system.s.o build/usr.printf_test.o build/usr.lib.stdio.o build/usr.lib.string.o
-	$(CC) ${USR_CFLAGS} -nostdlib -Wl,--no-dynamic-linker -Wl,-Tusr/link.ld -o $@ build/usr.printf_test.o build/usr.lib.system.s.o build/usr.lib.system.o build/usr.lib.stdio.o build/usr.lib.string.o
+	$(CC) ${USR_CFLAGS} -nostdlib -Wl,-Tusr/link.ld -o $@ build/usr.printf_test.o build/usr.lib.system.s.o build/usr.lib.system.o build/usr.lib.stdio.o build/usr.lib.string.o
 
 initrd/wordle.elf: usr/link.ld build/usr.lib.system.o build/usr.lib.system.s.o build/usr.wordle.o build/usr.lib.stdio.o build/usr.lib.string.o
-	$(CC) ${USR_CFLAGS} -nostdlib -Wl,--no-dynamic-linker -Wl,-Tusr/link.ld -o $@ build/usr.wordle.o build/usr.lib.system.s.o build/usr.lib.system.o build/usr.lib.stdio.o build/usr.lib.string.o
+	$(CC) ${USR_CFLAGS} -nostdlib -Wl,-Tusr/link.ld -o $@ build/usr.wordle.o build/usr.lib.system.s.o build/usr.lib.system.o build/usr.lib.stdio.o build/usr.lib.string.o
 
 # Build the lisp shell
 build/usr.lisp.%.o: usr/lisp/%.c

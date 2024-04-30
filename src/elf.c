@@ -23,8 +23,7 @@ i32 elf_load(void *data) {
 	assert(header->word_size == 1, "elf_load: Can't load a 64 bit executable");
 	assert(header->endian == 1, "elf_load: Big Endian executable");
 
-	/* This is doing some weird things with older versions of GCC */
-	//assert(header->type[0] == 2, "elf_load: Not an executable");
+	// assert(header->type[0] == 2, "elf_load: Not an executable");
 	assert(header->instruction_set[0] == 0x03, "elf_load: Not x86");
 	assert(header->elf_version == 1, "elf_load: Weird elf version");
 
