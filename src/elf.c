@@ -8,6 +8,7 @@
 
 /* The global offset table contains pointers relative to the entry point. We need to offset these pointers when we load the operating system. */
 void remap_global_offset_table(u32 entry_point, u32 *addr, u32 size) {
+	addr--;
 	for (u32 i = 0; i < size / 4; i++)
 		addr[i] += entry_point;
 }
@@ -56,11 +57,10 @@ i32 elf_load(void *data) {
 			/* Get the name from the symbol table */
 			const i8 *name = sname_header.sh_offset + s_header.sh_name + data;
 			/* If we found the global offset table, offset all the addresses */
-			if (strcmp(name, ".got.plt") == 0) {
+			if (strcmp(name, ".got.plt") == 0)
 				remap_global_offset_table((u32)exec_offset,
 							  (u32*)(s_header.sh_offset + (i8*)data),
 							s_header.sh_size);
-			}
 		}
 	assert(entry_point != header->program_entry_offset, "elf_load: Failed to find entry point");
 	/* Get the offset into the file data */

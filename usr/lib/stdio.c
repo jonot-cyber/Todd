@@ -83,9 +83,10 @@ int gets(char *buf, int size) {
 		if (ch == '\n') {
 			buf[i] = '\0';
 			return i;
-		} else if (ch == '\b')
-			i--;
-		else
+		} else if (ch == '\b') {
+			if (i != 0)
+				i--;
+		} else
 			buf[i] = ch;
 	}
 	/* make sure that the string is always null terminated */

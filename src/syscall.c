@@ -1,3 +1,5 @@
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 #include "syscall.h"
 
 #include "elf.h"
@@ -88,7 +90,7 @@ void syscall_handler(struct Registers regs) {
 		break;
 	}
 	default:
-		printf("Syscall 0d%d\n", regs.eax);
+		printf("Syscall %d\n", regs.eax);
 		assert(false, "syscall_handler: Not an implemented syscall");
 	}
 }
@@ -96,3 +98,4 @@ void syscall_handler(struct Registers regs) {
 void syscall_init() {
 	register_interrupt_handler(3, syscall_handler);
 }
+#pragma GCC pop_options

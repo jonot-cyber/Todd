@@ -1,3 +1,5 @@
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 #include "stdio.h"
 #include "system.h"
 
@@ -44,14 +46,7 @@ void scope_add_builtin(struct Scope* scope, struct ASTNode* (*fn)(struct ASTNode
 	scope_add(scope, &tmp);
 }
 
-void scope_init(struct Scope* scope) {
-	/* Initialize an array of all the nodes in the scope */
-	array_init(&scope->nodes, 4);
-
-	scope->data = malloc(SCOPE_TABLES * sizeof(struct ScopeEntry*));
-	scope->level = 0;
-	memset(scope->data, 0, SCOPE_TABLES * sizeof(struct ScopeEntry *));
-
+void scope_add_methods(struct Scope *scope) {
 	scope_add_builtin(scope, method_add, "+");
 	scope_add_builtin(scope, method_sub, "-");
 	scope_add_builtin(scope, method_mul, "*");
@@ -78,6 +73,17 @@ void scope_init(struct Scope* scope) {
 	scope_add_builtin(scope, method_let, "let");
 	scope_add_builtin(scope, method_apply, "apply");
 	scope_add_builtin(scope, method_map, "map");
+}
+
+
+void scope_init(struct Scope* scope) {
+	/* Initialize an array of all the nodes in the scope */
+	array_init(&scope->nodes, 4);
+
+	scope->data = malloc(SCOPE_TABLES * sizeof(struct ScopeEntry*));
+	memset(scope->data, 0, SCOPE_TABLES * sizeof(struct ScopeEntry *));
+	scope->level = 0;
+	scope_add_methods(scope);
 }
 
 void scope_add(struct Scope* scope, struct ScopeEntry* entry) {
@@ -158,15 +164,14 @@ void scope_out(struct Scope* scope) {
 	scope->level--;
 }
 
-struct ScopeEntry* scope_lookup(struct Scope* scope, char const* name) {
-	unsigned bucket_id = pjw_hash((unsigned char*)name, strlen(name));
+struct ScopeEntry* scope_lookup(struct Scope *scope, char const *name) {
+	unsigned bucket_id = pjw_hash((unsigned char *)name, strlen(name));
 	bucket_id %= SCOPE_TABLES;
-	struct ScopeEntry* ptr = scope->data[bucket_id];
+	struct ScopeEntry *ptr = scope->data[bucket_id];
 	while (ptr) {
-		if (strcmp(ptr->name, name) == 0) {
+		if (strcmp(ptr->name, name) == 0)
 			// We found the entry! Return.
 			break;
-		}
 		ptr = ptr->next;
 	}
 	return ptr;
@@ -218,3 +223,4 @@ void scope_gc(struct Scope* scope) {
 	}
 	return;
 }
+#pragma GCC pop_options

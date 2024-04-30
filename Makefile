@@ -1,5 +1,5 @@
-CFLAGS += -m32 -nostdinc -fno-builtin -O0 -fno-strict-aliasing -Wall -Wextra -fno-stack-protector
-ASFLAGS += -m32 -O0 -Wall -Wextra
+CFLAGS += -m32 -nostdinc -fno-builtin -O2 -fno-strict-aliasing -Wall -Wextra -fno-stack-protector
+ASFLAGS += -m32 -O2 -Wall -Wextra
 
 USR_CFLAGS = ${CFLAGS} -fPIE -fPIC -ffreestanding
 USR_ASFLAGS = ${ASFLAGS} -fPIE -fPIC -ffreestanding
@@ -35,7 +35,7 @@ build/usr.wordle.o: usr/wordle.c
 	$(CC) ${USR_CFLAGS} -Iusr/include -c -o $@ $^
 
 initrd/todd.elf: usr/include/system.h usr/link.ld build/usr.lib.system.o build/usr.lib.system.s.o build/usr.todd.o build/usr.lib.string.o
-	$(CC) ${USR_CFLAGS} -nostdlib -Wl,--no-dynamic-linker -Wl,-Tusr/link.ld -o $@ build/usr.todd.o build/usr.lib.system.s.o build/usr.lib.system.o build/usr.lib.string.o
+	$(CC) ${USR_CFLAGS} -nostdlib -Wl,-Tusr/link.ld -o $@ build/usr.todd.o build/usr.lib.system.s.o build/usr.lib.system.o build/usr.lib.string.o
 
 initrd/test.elf: usr/link.ld build/usr.lib.system.o build/usr.lib.system.s.o build/usr.printf_test.o build/usr.lib.stdio.o build/usr.lib.string.o
 	$(CC) ${USR_CFLAGS} -nostdlib -Wl,--no-dynamic-linker -Wl,-Tusr/link.ld -o $@ build/usr.printf_test.o build/usr.lib.system.s.o build/usr.lib.system.o build/usr.lib.stdio.o build/usr.lib.string.o
