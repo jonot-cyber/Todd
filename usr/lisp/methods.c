@@ -75,7 +75,7 @@ struct ASTNode *method_div(struct ASTNode *n, struct Scope *scope) {
 	while (n) {
 		TCHECK(n, AST_PAIR);
 		struct ASTNode *tmp = exec_node(scope, CAR(n));
-		TCHECK(tmp, AST_PAIR);
+		TCHECK(tmp, AST_INT);
 		if (first)
 			ret->data.num = tmp->data.num;
 		else
