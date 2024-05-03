@@ -67,6 +67,10 @@ int main() {
 				break;
 			}
 	}
-	printf("You won in %d guesses!\n", rounds);
+	if (rounds == 1)
+		printf("You won in 1 guess\n");
+	else
+		printf("You won in %d guesses\n", rounds);
+
 	return 0;
 }
