@@ -24,9 +24,7 @@ bool could_fit_page_table(struct HeapHeader *h, u32 to_alloc) {
 	u32 new_start_point = (u32)h + to_alloc;
 	u32 next_boundry = (new_start_point + 0x1000) & 0xfffff000;
 	u32 size_needed = 4096 + next_boundry - new_start_point + sizeof(struct HeapFooter);
-	u32 remaining_size = h->size - to_alloc;
 	return h->size >= size_needed + to_alloc;
-	return remaining_size >= size_needed;
 }
 
 void* heap_malloc(u32 size, bool align) {

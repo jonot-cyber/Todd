@@ -17,7 +17,7 @@ void to_upper(char *word) {
 int main() {
 #include "wordle_dictionary.h"
 	const int word_count = 2314;
-	const char *correct_word = &words[6 * (rand() % 2314)];
+	const char *correct_word = &words[6 * (rand() % word_count)];
 	
 	printf("== [WORDLE] ==\n");
 	int game_over = 0;
@@ -68,4 +68,5 @@ int main() {
 			}
 	}
 	printf("You won in %d guesses!\n", rounds);
+	return 0;
 }

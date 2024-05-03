@@ -41,6 +41,8 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 		}
 
 		struct ParserListContents *free_ptr = v->data;
+		if (free_ptr == 0)
+			break;
 		free_ptr = free_ptr->n;
 		while (free_ptr) {
 			struct ParserListContents *next = free_ptr->n;
@@ -65,6 +67,8 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 		/* Free all the pointer stuff */
 		struct ParserListContents *free_ptr = v->data;
 		/* Skip one, since it will be freed below */
+		if (free_ptr == 0)
+			break;
 		free_ptr = free_ptr->n;
 		while (free_ptr) {
 			struct ParserListContents *next = free_ptr->n;
@@ -79,6 +83,7 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 		char *buf = malloc(span->end - span->start + 1);
 		memcpy(span->start, buf, span->end - span->start);
 		buf[span->end - span->start] = '\0';
+		free(span);
 		ret->type = AST_SYMBOL;
 		ret->data.span = buf;
 		break;
@@ -89,6 +94,7 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 		char *buf = malloc(span->end - span->start - 1);
 		memcpy(span->start + 1, buf, span->end - span->start - 2);
 		buf[span->end - span->start - 2] = '\0';
+		free(span);
 		ret->type = AST_STRING;
 		ret->data.span = buf;
 		break;
@@ -113,6 +119,10 @@ struct ASTNode *convert_list(struct Scope *scope, struct ParserListContents *lis
 }
 
 struct ASTNode *exec_function(struct ASTNode *method, struct ASTNode *args, struct Scope *scope) {
+	if (method == 0) {
+		printf("exec_function: Method is null\n");
+		return 0;
+	}
 	if (method->type != AST_METHOD) {
 		printf("exec_function: Not a symbol name\n");
 		return 0;
@@ -234,6 +244,9 @@ void output(struct ASTNode *n) {
 		printf("\"%s\"", n->data.span);
 		break;
 	}
+	case AST_METHOD:
+		printf("METHOD");
+		break;
 	default:
 		printf("Unknown output type: %d\n", (unsigned)n->type);
 		break;

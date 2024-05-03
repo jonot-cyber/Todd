@@ -114,6 +114,7 @@ void scope_del(struct Scope* scope, char const* name) {
 	struct ScopeEntry* root = scope->data[bucket_id];
 	if (root == 0) {
 		printf("scope_del: Attempted to delete nonexistent key\n");
+		return;
 	}
 	if (strcmp(root->name, name) == 0) {
 		// We found our key at the root

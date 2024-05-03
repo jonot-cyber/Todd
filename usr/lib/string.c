@@ -39,7 +39,7 @@ unsigned str_to_uint(const char *str) {
 	unsigned ret = 0;
 	while (*str) {
 		if (*str < '0' || *str > '9') {
-			return 0x123456789;
+			return 0x01234567;
 		}
 		ret *= 10;
 		ret += (*str - '0');

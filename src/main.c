@@ -21,6 +21,7 @@ void check_modules(struct MultiBoot *mboot) {
 	u32 count = mboot->mods_count;
 	struct MultiBootModule* module_ptr = mboot->mods_addr;
 	for (u32 i = 0; i < count; i++, module_ptr = (struct MultiBootModule*)module_ptr->mod_end + 1) {
+		assert(module_ptr != NULL, "check_modules: No module\n");
 		assert(module_ptr->string != NULL, "check_modules: No module name\n");
 		if (strcmp(module_ptr->string, "build/initrd.tar") == 0)
 			load_ustar((struct TarHeader*)module_ptr->mod_start);
@@ -33,7 +34,7 @@ void *save_modules(struct MultiBoot *mboot) {
 	u32 count = mboot->mods_count;
 	struct MultiBootModule *mod_ptr = mboot->mods_addr;
 	for (u32 i = 0; i < count; i++)
-		if (mod_ptr->mod_end > end_ptr)
+		if (mod_ptr->mod_end > (u32)end_ptr)
 			end_ptr = (void *)mod_ptr->mod_end;
 	return end_ptr;
 }

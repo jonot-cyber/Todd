@@ -381,15 +381,30 @@ struct ASTNode *method_string_append(struct ASTNode *args, struct Scope *scope) 
 
 	struct ASTNode *args_ptr = args;
 	while (args_ptr) {
+		if (args_ptr->type != AST_PAIR) {
+			if (buf != 0)
+				free(buf);
+			return 0;
+		}
 		TCHECK(args_ptr, AST_PAIR);
 		struct ASTNode *node = exec_node(scope, CAR(args_ptr));
-		PNULL(node);
-		TCHECK(node, AST_STRING);
+		if (node == 0) {
+			if (buf != 0)
+				free(buf);
+			return 0;
+		}
+		if (node->type != AST_STRING) {
+			if (buf != 0)
+				free(buf);
+			return 0;
+		}
 
 		unsigned len = strlen(node->data.span);
 		char *new_buf = malloc(buf_len + len + 1);
 
 		memcpy(buf, new_buf, buf_len);
+		if (buf != 0)
+			free(buf);
 		memcpy(node->data.span, new_buf+buf_len, len);
 
 		buf_len += len;
