@@ -7,6 +7,8 @@
 #include "parser.h"
 #include "scope.h"
 
+static int execution_depth = 0;
+
 struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 	if (v == 0)
 		return 0;
@@ -83,7 +85,7 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 		char *buf = malloc(span->end - span->start + 1);
 		memcpy(span->start, buf, span->end - span->start);
 		buf[span->end - span->start] = '\0';
-		free(span);
+		/* free(span); */
 		ret->type = AST_SYMBOL;
 		ret->data.span = buf;
 		break;
@@ -163,19 +165,26 @@ struct ASTNode *exec_function(struct ASTNode *method, struct ASTNode *args, stru
 }
 
 struct ASTNode *exec_node(struct Scope *scope, struct ASTNode *n) {
+	struct ASTNode *return_value = 0;
+	if (++execution_depth > 64) {
+		printf("Error: maximum recursion depth reached\n");
+		goto end;
+	}
 	if (n == 0)
-		return 0;
+		goto end;
 	switch (n->type) {
 	case AST_INT:
 	case AST_QUOTE_PAIR:
 	case AST_STRING:
 	case AST_METHOD:
-		return n;
+		return_value = n;
+		goto end;
 	case AST_PAIR:
 	{
 		struct ASTNode *first_node = exec_node(scope, n->data.pair.p1);
 		if (first_node->type == AST_METHOD) {
-			return exec_function(first_node, n->data.pair.p2, scope);
+			return_value = exec_function(first_node, n->data.pair.p2, scope);
+			goto end;
 		}
 		/* We don't want to evaluate a list and its children *
 		 if we don't need to. For example, see this code:
@@ -186,22 +195,26 @@ struct ASTNode *exec_node(struct Scope *scope, struct ASTNode *n) {
 		 it. Lazy evaluation makes sure constructs like this
 		 work. Also helps with performace.
 		 */
-		return n;
+		return_value = n;
+		goto end;
 	}
 	case AST_SYMBOL:
 	{
 		struct ScopeEntry* r = scope_lookup(scope, n->data.span);
 		if (r == 0) {
 			printf("exec_node: unknown symbol\n");
-			return 0;
+			goto end;
 		}
-		return exec_node(scope, r->node);
+		return_value = exec_node(scope, r->node);
+		goto end;
 	}
 	default:
 		printf("exe: bad type\n");
 		break;
 	}
-	return 0;
+end:
+	execution_depth--;
+	return return_value;
 }
 
 void output(struct ASTNode *n) {
@@ -255,6 +268,7 @@ void output(struct ASTNode *n) {
 
 void scope_exec(struct Scope *scope, struct ParserListContents *l) {
 	for (struct ASTNode *c = convert_list(scope, l); c; c = c->data.pair.p2) {
+		execution_depth = 0;
 		struct ASTNode *res = exec_node(scope, c->data.pair.p1);
 		output(res);
 		putchar('\n');
