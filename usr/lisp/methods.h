@@ -31,4 +31,11 @@ struct ASTNode* method_apply(struct ASTNode*, struct Scope*);
 struct ASTNode* method_map(struct ASTNode*, struct Scope*);
 struct ASTNode *method_int_to_string(struct ASTNode *, struct Scope*);
 
+/* List functions */
+struct ASTNode *method_list(struct ASTNode *, struct Scope *);
+struct ASTNode *method_car(struct ASTNode *, struct Scope *);
+struct ASTNode *method_cdr(struct ASTNode *, struct Scope *);
+struct ASTNode *method_quote(struct ASTNode *, struct Scope *);
+struct ASTNode *method_unquote(struct ASTNode *, struct Scope *);
+
 #endif

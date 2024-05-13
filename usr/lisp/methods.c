@@ -525,3 +525,97 @@ struct ASTNode *method_int_to_string(struct ASTNode *args, struct Scope *scope) 
 	ret->data.span = buf;
 	return ret;
 }
+
+struct ASTNode *method_list(struct ASTNode *args, struct Scope *scope) {
+	PNULL(args);
+	TCHECK(args, AST_PAIR);
+	struct ASTNode *ret = scope_kmalloc(scope);
+	ret->type = AST_QUOTE_PAIR;
+	CAR(ret) = exec_node(scope, CAR(args));
+	struct ASTNode *ptr = ret;
+	while (CDR(args) != 0) {
+		if (CDR(args)->type != AST_PAIR)
+			printf("%d\n", CDR(args)->type);
+		CDR(ptr) = scope_kmalloc(scope);
+		CDR(ptr)->type = AST_QUOTE_PAIR;
+		struct ASTNode *huh = CAR(CDR(args));
+		CAR(CDR(ptr)) = exec_node(scope, huh);
+		CDR(CDR(ptr)) = 0;
+		args = CDR(args);
+		ptr = CDR(ptr);
+	}
+	return ret;
+}
+
+struct ASTNode *method_car(struct ASTNode *args, struct Scope *scope) {
+	PNULL(args);
+	TCHECK(args, AST_PAIR);
+	PNULL(CAR(args));
+	TCHECK(CAR(args), AST_QUOTE_PAIR);
+	return exec_node(scope, CAR(CAR(args)));
+}
+
+struct ASTNode *method_cdr(struct ASTNode *args, struct Scope *scope) {
+	PNULL(args);
+	TCHECK(args, AST_PAIR);
+	PNULL(CAR(args));
+	TCHECK(CAR(args), AST_QUOTE_PAIR);
+	return exec_node(scope, CDR(CAR(args)));
+}
+
+struct ASTNode *_method_quote(struct ASTNode *arg, struct Scope *scope) {
+	if (arg->type == AST_PAIR) {
+		struct ASTNode *ret = scope_kmalloc(scope);
+		ret->type = AST_QUOTE_PAIR;
+		CAR(ret) = _method_quote(CAR(arg), scope);
+		CDR(ret) = _method_quote(CDR(arg), scope);
+		return ret;
+	} else if (arg->type == AST_SYMBOL) {
+		struct ASTNode *ret = scope_kmalloc(scope);
+		ret->type = AST_QUOTE_SYMBOL;
+		int len = strlen(arg->data.span);
+		char *buf = malloc(len + 1);
+		memcpy(arg->data.span, buf, len);
+		buf[len] = '\0';
+		ret->data.span = buf;
+		return ret;
+	} else {
+		return arg;
+	}
+}
+
+struct ASTNode *method_quote(struct ASTNode *args, struct Scope *scope) {
+	PNULL(args);
+	TCHECK(args, AST_PAIR);
+	struct ASTNode *to_quote = CAR(args);
+	return _method_quote(to_quote, scope);
+}
+
+struct ASTNode *_method_unquote(struct ASTNode *arg, struct Scope *scope) {
+	PNULL(arg);
+	if (arg->type == AST_QUOTE_PAIR) {
+		struct ASTNode *ret = scope_kmalloc(scope);
+		ret->type = AST_PAIR;
+		CAR(ret) = _method_unquote(CAR(arg), scope);
+		CDR(ret) = _method_unquote(CDR(arg), scope);
+		return exec_node(scope, ret);
+	} else if (arg->type == AST_QUOTE_SYMBOL) {
+		struct ASTNode *ret = scope_kmalloc(scope);
+		ret->type = AST_SYMBOL;
+		int len = strlen(arg->data.span);
+		char *buf = malloc(len + 1);
+		memcpy(arg->data.span, buf, len);
+		buf[len] = '\0';
+		ret->data.span = buf;
+		return exec_node(scope, ret);
+	} else {
+		return exec_node(scope, arg);
+	}
+}
+
+struct ASTNode *method_unquote(struct ASTNode *args, struct Scope *scope) {
+	PNULL(args);
+	TCHECK(args, AST_PAIR);
+	PNULL(CAR(args));
+	return _method_unquote(exec_node(scope, CAR(args)), scope);
+}

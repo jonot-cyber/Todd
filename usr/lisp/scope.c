@@ -74,6 +74,11 @@ void scope_add_methods(struct Scope *scope) {
 	scope_add_builtin(scope, method_apply, "apply");
 	scope_add_builtin(scope, method_map, "map");
 	scope_add_builtin(scope, method_int_to_string, "int->string");
+	scope_add_builtin(scope, method_list, "list");
+	scope_add_builtin(scope, method_car, "car");
+	scope_add_builtin(scope, method_cdr, "cdr");
+	scope_add_builtin(scope, method_quote, "quote");
+	scope_add_builtin(scope, method_unquote, "unquote");
 }
 
 

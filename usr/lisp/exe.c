@@ -79,6 +79,16 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 		}
 		break;
 	}
+	case P_QUOTE_SYMBOL:
+	{
+		struct ParserSpan *span = v->data;
+		char *buf = malloc(span->end - span->start + 1);
+		memcpy(span->start, buf, span->end - span->start);
+		buf[span->end - span->start] = '\0';
+		ret->type = AST_QUOTE_SYMBOL;
+		ret->data.span = buf;
+		break;
+	}
 	case P_SYMBOL:
 	{
 		struct ParserSpan *span = v->data;
@@ -102,7 +112,7 @@ struct ASTNode* convert_value(struct Scope* scope, struct ParserValue* v) {
 		break;
 	}
 	default:
-		printf("convert_value: Unknown type\n");
+		printf("convert_value: Unknown type %d\n", v->t);
 		return 0;
 	}
 	free(v);
@@ -206,6 +216,11 @@ struct ASTNode *exec_node(struct Scope *scope, struct ASTNode *n) {
 			goto end;
 		}
 		return_value = exec_node(scope, r->node);
+		goto end;
+	}
+	case AST_QUOTE_SYMBOL:
+	{
+		return_value = n;
 		goto end;
 	}
 	default:
