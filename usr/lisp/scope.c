@@ -73,6 +73,7 @@ void scope_add_methods(struct Scope *scope) {
 	scope_add_builtin(scope, method_let, "let");
 	scope_add_builtin(scope, method_apply, "apply");
 	scope_add_builtin(scope, method_map, "map");
+	scope_add_builtin(scope, method_int_to_string, "int->string");
 }
 
 

@@ -24,11 +24,11 @@ struct ASTNode* method_le(struct ASTNode*, struct Scope*);
 struct ASTNode* method_ge(struct ASTNode*, struct Scope*);
 struct ASTNode* method_ne(struct ASTNode*, struct Scope*);
 
-
 struct ASTNode* method_exec(struct ASTNode*, struct Scope*);
 struct ASTNode* method_string_append(struct ASTNode*, struct Scope*);
 struct ASTNode* method_let(struct ASTNode*, struct Scope*);
 struct ASTNode* method_apply(struct ASTNode*, struct Scope*);
 struct ASTNode* method_map(struct ASTNode*, struct Scope*);
+struct ASTNode *method_int_to_string(struct ASTNode *, struct Scope*);
 
 #endif

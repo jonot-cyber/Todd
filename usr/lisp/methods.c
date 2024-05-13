@@ -498,3 +498,30 @@ struct ASTNode *method_map(struct ASTNode *args, struct Scope *scope) {
 	struct ASTNode *data = exec_node(scope, CAR(CDR(args)));
 	return recursive_map(method, data, scope);
 }
+
+struct ASTNode *method_int_to_string(struct ASTNode *args, struct Scope *scope) {
+	PNULL(args);
+	TCHECK(args, AST_PAIR);
+	struct ASTNode *value = exec_node(scope, CAR(args));
+	PNULL(value);
+	TCHECK(value, AST_INT);
+
+	unsigned in = value->data.num;
+	int power = 10;
+	int count = 1;
+	while (power < in) {
+		power *= 10;
+		count++;
+	}
+	power /= 10;
+	char *buf = malloc(count + 1);
+	buf[count] = '\0';
+	for (int i = 0; i < count; i++) {
+		buf[i] = '0' + (in / power) % 10;
+		power /= 10;
+	}
+	struct ASTNode *ret = scope_kmalloc(scope);
+	ret->type = AST_STRING;
+	ret->data.span = buf;
+	return ret;
+}
