@@ -79,6 +79,7 @@ void scope_add_methods(struct Scope *scope) {
 	scope_add_builtin(scope, method_cdr, "cdr");
 	scope_add_builtin(scope, method_quote, "quote");
 	scope_add_builtin(scope, method_unquote, "unquote");
+	scope_add_builtin(scope, method_range, "range");
 }
 
 

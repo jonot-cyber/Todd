@@ -550,17 +550,19 @@ struct ASTNode *method_list(struct ASTNode *args, struct Scope *scope) {
 struct ASTNode *method_car(struct ASTNode *args, struct Scope *scope) {
 	PNULL(args);
 	TCHECK(args, AST_PAIR);
-	PNULL(CAR(args));
-	TCHECK(CAR(args), AST_QUOTE_PAIR);
-	return exec_node(scope, CAR(CAR(args)));
+	struct ASTNode *arg = exec_node(scope, CAR(args));
+	PNULL(arg);
+	TCHECK(arg, AST_QUOTE_PAIR);
+	return exec_node(scope, CAR(arg));
 }
 
 struct ASTNode *method_cdr(struct ASTNode *args, struct Scope *scope) {
 	PNULL(args);
 	TCHECK(args, AST_PAIR);
-	PNULL(CAR(args));
-	TCHECK(CAR(args), AST_QUOTE_PAIR);
-	return exec_node(scope, CDR(CAR(args)));
+	struct ASTNode *arg = exec_node(scope, CAR(args));
+	PNULL(arg);
+	TCHECK(arg, AST_QUOTE_PAIR);
+	return exec_node(scope, CDR(arg));
 }
 
 struct ASTNode *_method_quote(struct ASTNode *arg, struct Scope *scope) {
@@ -618,4 +620,32 @@ struct ASTNode *method_unquote(struct ASTNode *args, struct Scope *scope) {
 	TCHECK(args, AST_PAIR);
 	PNULL(CAR(args));
 	return _method_unquote(exec_node(scope, CAR(args)), scope);
+}
+
+struct ASTNode *_method_range(int begin, int end, struct Scope *scope) {
+	if (begin == end) {
+		return 0;
+	}
+	struct ASTNode *ret = scope_kmalloc(scope);
+	ret->type = AST_QUOTE_PAIR;
+	struct ASTNode *first = scope_kmalloc(scope);
+	first->type = AST_INT;
+	first->data.num = begin;
+	CAR(ret) = first;
+	CDR(ret) = _method_range(begin + 1, end, scope);
+	return ret;
+}
+
+struct ASTNode *method_range(struct ASTNode *args, struct Scope *scope) {
+	PNULL(args);
+	TCHECK(args, AST_PAIR);
+	PNULL(CAR(args));
+	TCHECK(CAR(args), AST_INT);
+	int begin = CAR(args)->data.num;
+	PNULL(CDR(args));
+	TCHECK(CDR(args), AST_PAIR);
+	PNULL(CAR(CDR(args)));
+	TCHECK(CAR(CDR(args)), AST_INT);
+	int end = CAR(CDR(args))->data.num;
+	return _method_range(begin, end, scope);
 }

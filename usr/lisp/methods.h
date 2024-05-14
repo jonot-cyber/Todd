@@ -37,5 +37,6 @@ struct ASTNode *method_car(struct ASTNode *, struct Scope *);
 struct ASTNode *method_cdr(struct ASTNode *, struct Scope *);
 struct ASTNode *method_quote(struct ASTNode *, struct Scope *);
 struct ASTNode *method_unquote(struct ASTNode *, struct Scope *);
+struct ASTNode *method_range(struct ASTNode *, struct Scope *);
 
 #endif
